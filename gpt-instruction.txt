@@ -1,0 +1,782 @@
+Nice — this is a great idea. Below I’ll give you a complete, **practical, step-by-step plan** to build **PrioriTask** using **React (frontend)** + **Laravel (API/backend)**, store it on **GitHub**, and **containerize** everything with **Docker / docker-compose**. Where it helps, I include concrete files/commands (Dockerfiles, docker-compose, migration fields, API routes, and pseudocode/implementation for the four prioritization formulas). You can follow the steps in order and copy/paste the examples.
+
+# 1 — Project overview (what you'll build)
+
+PrioriTask lets students add assignments and their properties (due date, points, weight, subjective difficulty, current grade, etc.).
+Users can pick one of the 4 prioritization *solutions* (DDS, DoD, B2D, EoC) and get a prioritized list. Features:
+
+* User auth (register/login)
+* CRUD for assignments
+* Save user preference for chosen prioritization method
+* Server API that returns sorted assignments (optionally support client-side sorting)
+* Responsive React UI
+* Tests (backend + frontend)
+* Containerized (Laravel, React, MySQL)
+* Hosted via GitHub repo (CI to build/test, optional push to a registry / deploy)
+
+---
+
+# 2 — Tech stack & versions (recommended)
+
+* Backend: Laravel 10 (PHP 8.1+)
+* Frontend: React 18 (create-react-app or Vite)
+* DB: MySQL 8 (or MariaDB)
+* Auth: Laravel Sanctum for SPA token auth
+* Container: Docker / docker-compose
+* Optional: Redis for caching / queues
+* Git + GitHub (remote repo)
+* CI: GitHub Actions
+
+---
+
+# 3 — Repository & folder layout
+
+Root repo `prioritask/`
+
+```
+/prioritask
+  /backend                # Laravel app
+  /frontend               # React app
+  docker-compose.yml
+  README.md
+  .github/workflows/ci.yml
+```
+
+---
+
+# 4 — Backend (Laravel) — step by step
+
+### 4.1 Create Laravel app
+
+From project root:
+
+```bash
+cd prioritask
+composer create-project laravel/laravel backend
+```
+
+### 4.2 Setup DB env in `backend/.env`
+
+Example:
+
+```
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=prioritask
+DB_USERNAME=app
+DB_PASSWORD=secret
+```
+
+(we’ll wire these to docker-compose later)
+
+### 4.3 Migration & model: `assignments`
+
+Create migration:
+
+```bash
+php artisan make:model Assignment -m
+```
+
+Migration fields (example):
+
+```php
+Schema::create('assignments', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->string('title');
+    $table->text('description')->nullable();
+    $table->date('due_date')->nullable();
+    $table->integer('points')->default(0);   // B
+    $table->decimal('weight', 5, 2)->default(0); // W (percentage)
+    $table->integer('difficulty')->default(3); // Df (1-10)
+    $table->integer('estimated_effort')->nullable(); // minutes or hours
+    $table->boolean('completed')->default(false);
+    $table->timestamps();
+});
+```
+
+Also store user preferences:
+
+```bash
+php artisan make:migration add_preferences_to_users_table --table=users
+```
+
+Add fields:
+
+```php
+$table->string('prioritization_method')->default('dds'); // dds, dod, b2d, eoc
+```
+
+### 4.4 Auth
+
+Install Sanctum and configure SPA auth (standard Laravel Sanctum setup). Use cookie-based flow for React SPA or issue tokens.
+
+### 4.5 API routes
+
+In `routes/api.php` (example):
+
+```php
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('assignments', AssignmentController::class);
+    Route::post('assignments/prioritize', [AssignmentController::class, 'prioritize']);
+    Route::get('user/preferences', [UserController::class, 'preferences']);
+    Route::post('user/preferences', [UserController::class, 'savePreferences']);
+});
+```
+
+### 4.6 Controller logic — prioritize endpoint
+
+`AssignmentController@prioritize` should:
+
+* Fetch user's pending assignments
+* Compute `Dy = max(1, days_left)` (use days left >= 0; if overdue, days_left = 0 or 0.5 — decide consistently)
+* Compute ranking score according to method requested (or user's saved preference)
+* Return ordered list (highest priority first)
+
+I'll give you concrete PHP implementations for formulas below.
+
+### 4.7 Prioritization formulas (Laravel / PHP)
+
+Add a helper or Trait `PrioritizationTrait` with methods:
+
+```php
+// inside app/Services/PrioritizationService.php
+class PrioritizationService {
+    public static function daysLeft(DateTime $dueDate){
+        $today = new DateTime('today');
+        $interval = $today->diff($dueDate);
+        $days = (int)$interval->format('%r%a'); // negative if past
+        return max(0, $days); // use 0 for overdue
+    }
+
+    public static function ddsScore($assignment){
+        $dy = self::daysLeft(new DateTime($assignment->due_date)) ?: 1;
+        return 1.0 / $dy;
+    }
+
+    public static function dodScore($assignment){
+        $dy = self::daysLeft(new DateTime($assignment->due_date)) ?: 1;
+        $df = max(1, $assignment->difficulty);
+        return $df / $dy;
+    }
+
+    public static function b2dScore($assignment){
+        $dy = self::daysLeft(new DateTime($assignment->due_date)) ?: 1;
+        $df = max(1, $assignment->difficulty);
+        $b  = max(1, $assignment->points); // avoid zero division
+        return $b / ($df * $dy);
+    }
+
+    public static function eocScore($assignment, $user){
+        $dy = self::daysLeft(new DateTime($assignment->due_date));
+        $dy = $dy + 1; // formula used Dy+1 to avoid divide by zero
+        $W = $assignment->weight ?: 0;
+        $B = $assignment->points ?: 0;
+        $G = $user->current_grade ?? null;
+        if ($G !== null) {
+            return ((100 - $G) * $W * $B) / ($dy);
+        } else {
+            return (40 * $W * $B) / ($dy);
+        }
+    }
+}
+```
+
+Then in the controller:
+
+```php
+$method = $request->input('method', $user->prioritization_method);
+$scores = [];
+foreach ($assignments as $a) {
+    switch ($method) {
+        case 'dds': $score = PrioritizationService::ddsScore($a); break;
+        case 'dod': $score = PrioritizationService::dodScore($a); break;
+        case 'b2d': $score = PrioritizationService::b2dScore($a); break;
+        case 'eoc': $score = PrioritizationService::eocScore($a, $user); break;
+        default: $score = PrioritizationService::ddsScore($a);
+    }
+    $a->priority_score = $score;
+    $scores[] = $a;
+}
+$ordered = collect($scores)->sortByDesc('priority_score')->values();
+return response()->json($ordered);
+```
+
+*(You can tune edge cases: negative days, zero points, scaling and normalization across fields.)*
+
+### 4.8 Tests
+
+* Unit tests for each scoring function (PHPUnit).
+* Feature tests for API endpoints (sanctum auth, create/read/prioritize).
+
+---
+
+# 5 — Frontend (React) — step by step
+
+### 5.1 Create React app
+
+Use Vite (fast) or CRA:
+
+```bash
+cd prioritask
+npm create vite@latest frontend --template react
+cd frontend
+npm install
+```
+
+### 5.2 Folder structure (suggested)
+
+```
+/frontend
+  /src
+    /api         // fetch wrappers
+    /components  // AssignmentList, AssignmentForm, PrioritizationSelect
+    /pages       // Dashboard, Login, Register
+    /hooks
+    /context     // AuthContext
+    App.jsx
+```
+
+### 5.3 Auth integration
+
+Use Sanctum cookie flow: when running on same domain (or setup proxy for local dev), call `/sanctum/csrf-cookie` then POST to `/login`. Alternatively use token auth endpoints.
+
+### 5.4 UI components & behavior
+
+Key components:
+
+* `AssignmentForm` — fields: title, due_date, points, weight, difficulty (1–10), estimated_effort.
+* `AssignmentList` — receives list and renders priority score and days-left badges.
+* `PrioritizationSelect` — user picks method; stores preference via API.
+
+### 5.5 Prioritize flow (client-side or server-side)
+
+Option A — server-side: React calls `POST /api/assignments/prioritize` and displays returned ordered list. Easier and guarantees consistent results.
+Option B — client-side: React fetches assignments and computes scores in JS (use same formulas). In either case, store preference on server to default method.
+
+Example fetch in React:
+
+```js
+// api/assignments.js
+export async function getPrioritizedAssignments(token, method) {
+  const res = await fetch('/api/assignments/prioritize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ method })
+  });
+  return res.json();
+}
+```
+
+### 5.6 UI considerations
+
+* Show days left (Dy), computed score, and human explanation (e.g., "High B2D — high points / low effort").
+* Allow sorting toggles: ascending/descending.
+* Allow manual override or pinning tasks.
+
+### 5.7 Tests
+
+* Unit tests (Jest + React Testing Library) for core components and scoring implementations if implemented client-side.
+
+---
+
+# 6 — Dockerize (Dockerfiles + docker-compose)
+
+### 6.1 `docker-compose.yml` (app + db + frontend)
+
+```yaml
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: prioritask
+      MYSQL_USER: app
+      MYSQL_PASSWORD: secret
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - appnet
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - mysql
+    ports:
+      - "8000:8000"
+    networks:
+      - appnet
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - appnet
+    depends_on:
+      - backend
+
+volumes:
+  dbdata:
+
+networks:
+  appnet:
+```
+
+### 6.2 Backend Dockerfile (`backend/Dockerfile`)
+
+```dockerfile
+FROM php:8.1-fpm
+
+# system deps
+RUN apt-get update && apt-get install -y \
+    git curl libzip-dev zip unzip libonig-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    default-mysql-client
+
+RUN docker-php-ext-install pdo_mysql mbstring zip exif gd
+
+# install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+COPY . /var/www/html
+
+RUN composer install --no-dev --optimize-autoloader
+
+# expose php-fpm port (we'll run artisan serve for simplicity)
+CMD php artisan serve --host=0.0.0.0 --port=8000
+```
+
+*(You can improve by using nginx + php-fpm for production.)*
+
+### 6.3 Frontend Dockerfile (`frontend/Dockerfile`)
+
+```dockerfile
+FROM node:18
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+```
+
+*In production you might build static files and serve from nginx.*
+
+---
+
+# 7 — Git & GitHub
+
+### 7.1 Initialize repo and push
+
+```bash
+git init
+git add .
+git commit -m "Initial PrioriTask scaffold"
+gh repo create prioritask --public --source=. --remote=origin
+git push -u origin main
+```
+
+(use GitHub CLI `gh`, or create repo on web and set origin)
+
+### 7.2 GitHub Actions (CI) sample `.github/workflows/ci.yml`
+
+A minimal example to install deps and run tests for backend & frontend:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+      - name: Composer install
+        run: |
+          cd backend
+          composer install --prefer-dist --no-progress
+      - name: Run backend tests
+        run: |
+          cd backend
+          php artisan test
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install & Test
+        run: |
+          cd frontend
+          npm ci
+          npm test -- --watchAll=false
+```
+
+---
+
+# 8 — Deployment options (brief)
+
+* **Render / Railway / Fly.io**: easy Docker deploy; connect GitHub repo.
+* **DigitalOcean App Platform**: supports Docker images and services.
+* **VPS (Docker Compose)**: push image to Docker Hub and `docker-compose up`.
+* **Frontend**: if built static, deploy to GitHub Pages / Netlify / Vercel; backend to Render/DO.
+
+---
+
+# 9 — UX & product notes
+
+* Let users choose where to compute (server vs client).
+* Default to EoC for grade-conscious students, DDS for deadline-avoidant students.
+* Display explanation tooltip for each formula and example calculation, so users know why an item was prioritized.
+* Provide sliders for subjective difficulty and quick presets.
+* Allow manual pin/unpin, mark as "in-progress" and track completion.
+
+---
+
+# 10 — Security & reliability checklist
+
+* Use HTTPS in production.
+* Protect API with Sanctum (CSRF / cookie).
+* Validate all inputs on backend.
+* Rate limit prioritize endpoint if heavy.
+* Back up DB (or use managed DB).
+* Add error monitoring (Sentry).
+
+---
+
+# 11 — Roadmap / milestones (example timeline you can follow)
+
+1. **Day 1**: Scaffold backend + migrations; create assignments model; basic API CRUD; docker-compose local test.
+2. **Day 2**: Implement prioritization algorithms server-side + tests.
+3. **Day 3**: Scaffold React app, auth flow with Sanctum, simple assignment form/list.
+4. **Day 4**: Hook prioritize UI to backend; allow user preference.
+5. **Day 5**: Polish UI, add sorting explanations, write unit tests.
+6. **Day 6**: Add Dockerfiles, test docker-compose workflow, CI config.
+7. **Day 7**: Prepare deployment and push to GitHub. (Optional: set up GitHub Actions to build & push Docker images to registry.)
+
+*(If you want, I can produce the exact code for controllers, migrations, React components, and Dockerfiles. Tell me which file you want first and I’ll generate it.)*
+
+---
+
+# 12 — Quick reference: formulas summary (for copy/paste)
+
+* DDS: `DDS = 1 / Dy`
+* DoD: `DoD = Df / Dy`
+* B2D: `B2D = B / (Df * Dy)`
+* EoC: `EoC = ((100 - G) * W * B) / (Dy + 1)` (or `(40 * W * B)/(Dy + 1)` if no current grade)
+
+---
+
+
+
+UI Instruction
+
+Perfect 👌 — let’s lock in the **Tech Minimal Theme** for PrioriTask.
+
+Below is a **page-by-page design blueprint** for the entire web app — every UI element, its Bootstrap classes, layout logic, responsive behavior, and interaction notes.
+
+You can treat this as your **official front-end implementation guide** for later development.
+
+---
+
+# 🎨 PrioriTask UI Guide — “Tech Minimal” Theme (Bootstrap 5)
+
+---
+
+## 🌑 Theme Overview
+
+**Goal:** A dark, modern dashboard aesthetic — efficient, data-driven, and professional.
+
+**Visual feel:**
+
+* Background: `#0F172A` (deep navy)
+* Cards: `#1E293B` (slate gray)
+* Text: `#F8FAFC` (light)
+* Primary accent: `#38BDF8` (sky blue)
+* Secondary accent: `#FACC15` (gold, for urgency)
+* Shadows: subtle `box-shadow: 0 2px 6px rgba(0,0,0,0.4)`
+
+**Fonts:**
+
+* Headings → `Montserrat` (semibold)
+* Body → `Inter` (regular)
+
+**Bootstrap base:**
+Use `data-bs-theme="dark"` or Bootswatch **Darkly** as base, then override colors in a custom stylesheet.
+
+---
+
+## 🧭 Page 1 — Login / Register Page
+
+### 1️⃣ Layout
+
+* **Container:** `container d-flex justify-content-center align-items-center vh-100`
+* **Card:** `card bg-dark text-light shadow-lg p-4`
+
+  * Width: `400px` on desktop, full width on mobile.
+
+### 2️⃣ Elements
+
+| Element           | Description                                      | Bootstrap Classes / Notes                                             |
+| ----------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
+| **Logo**          | App name “PrioriTask”                            | `<h2 class="text-primary fw-bold text-center mb-4">PrioriTask</h2>`   |
+| **Tabs**          | Toggle between Login / Register                  | `nav nav-tabs nav-fill mb-3` with two `<button class="nav-link">`     |
+| **Form Fields**   | Email, Password (+ Confirm Password if Register) | `form-floating mb-3`, `form-control bg-secondary text-light border-0` |
+| **Remember me**   | Checkbox                                         | `form-check form-switch`                                              |
+| **Submit Button** | Login/Register                                   | `btn btn-primary w-100 py-2 fw-semibold`                              |
+| **Footer link**   | “Don’t have an account? Register now.”           | `text-center text-muted mt-3 small`                                   |
+
+### 3️⃣ Interactions
+
+* Validate fields live (Bootstrap validation states).
+* Show spinner in button when loading.
+
+---
+
+## 🏠 Page 2 — Dashboard (Main Page)
+
+### 1️⃣ Layout
+
+* **Wrapper:** `d-flex vh-100`
+
+  * **Sidebar (Left):** fixed vertical nav, `col-2 col-lg-2 bg-dark p-3 border-end border-secondary`
+  * **Main Content (Right):** `flex-grow-1 bg-body p-4 overflow-auto`
+
+---
+
+### 2️⃣ Sidebar (Navigation Panel)
+
+| Element          | Description                                    | Classes / Behavior                                                                                                                                                                  |
+| ---------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Logo/Header**  | “PrioriTask” title                             | `<h4 class="text-primary fw-bold mb-4 text-center">PrioriTask</h4>`                                                                                                                 |
+| **Nav Links**    | Dashboard, Add Assignment, Preferences, Logout | `<ul class="nav flex-column"> <li class="nav-item"><a class="nav-link text-light d-flex align-items-center gap-2" href="#"><i class="bi bi-house"></i> Dashboard</a></li> ...</ul>` |
+| **Active link**  | Highlighted route                              | `nav-link active bg-primary bg-opacity-25 rounded`                                                                                                                                  |
+| **User summary** | (optional) small avatar, name, grade           | `d-flex align-items-center gap-2 mt-auto text-secondary small`                                                                                                                      |
+
+---
+
+### 3️⃣ Dashboard Main Content
+
+#### Header Section
+
+| Element        | Description            | Classes / Notes                                                               |
+| -------------- | ---------------------- | ----------------------------------------------------------------------------- |
+| **Top bar**    | Title + Add Button     | `d-flex justify-content-between align-items-center mb-4`                      |
+| **Page title** | “My Assignments”       | `<h3 class="fw-semibold text-light">My Assignments</h3>`                      |
+| **Add button** | Opens assignment modal | `btn btn-primary d-flex align-items-center gap-2` → icon: `bi bi-plus-circle` |
+
+#### Prioritization Controls
+
+| Element               | Description                     | Classes / Notes                                          |
+| --------------------- | ------------------------------- | -------------------------------------------------------- |
+| **Method selector**   | Dropdown for DDS, DoD, B2D, EoC | `form-select bg-dark text-light border-secondary w-auto` |
+| **Sort order toggle** | Button: Asc/Desc                | `btn btn-outline-light btn-sm ms-2`                      |
+| **Refresh button**    | Recalculate priorities          | `btn btn-outline-primary btn-sm ms-2`                    |
+
+#### Assignment Cards Grid
+
+Use Bootstrap responsive grid:
+`<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">`
+
+Each card:
+
+```html
+<div class="col">
+  <div class="card bg-dark text-light border-0 shadow-sm h-100">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h5 class="card-title text-primary mb-0">Assignment Title</h5>
+        <span class="badge bg-warning text-dark">Due in 2 days</span>
+      </div>
+      <p class="card-text text-muted small mb-3">Description or notes...</p>
+
+      <ul class="list-unstyled small mb-3">
+        <li><i class="bi bi-calendar-event me-2 text-secondary"></i> Due: Oct 25</li>
+        <li><i class="bi bi-bar-chart me-2 text-secondary"></i> Difficulty: 7</li>
+        <li><i class="bi bi-star me-2 text-secondary"></i> Points: 50</li>
+      </ul>
+
+      <div class="mt-auto">
+        <div class="progress mb-2" style="height: 6px;">
+          <div class="progress-bar bg-primary" style="width: 70%;"></div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-secondary small">Priority Score: <strong>0.142</strong></span>
+          <button class="btn btn-sm btn-outline-success">Mark Complete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+#### Empty State (if no assignments)
+
+* **Centered message:**
+  `div.d-flex.flex-column.justify-content-center.align-items-center.text-secondary.py-5`
+
+  * Icon: `<i class="bi bi-inbox fs-1 text-secondary mb-3"></i>`
+  * Text: “No assignments yet. Add one to get started.”
+
+---
+
+## ➕ Page 3 — Add / Edit Assignment Modal
+
+**Trigger:** “Add Assignment” button on Dashboard.
+
+### Modal Structure
+
+```html
+<div class="modal fade" id="assignmentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Add New Assignment</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- form here -->
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### Form Fields
+
+| Field            | Description        | Bootstrap classes           |
+| ---------------- | ------------------ | --------------------------- |
+| Title            | Assignment title   | `form-floating mb-3`        |
+| Description      | Optional           | `form-floating mb-3`        |
+| Due Date         | Date picker        | `form-floating mb-3`        |
+| Points           | Benefit/Points (B) | `form-floating mb-3`        |
+| Weight           | Grade weight (W)   | `form-floating mb-3`        |
+| Difficulty       | 1–10 slider        | `form-label` + `form-range` |
+| Estimated Effort | Hours or minutes   | `form-floating mb-3`        |
+| Completed        | Checkbox           | `form-check form-switch`    |
+
+All inputs:
+`class="form-control bg-secondary text-light border-0"`
+
+---
+
+## ⚙️ Page 4 — Preferences Page
+
+### 1️⃣ Layout
+
+`container py-5 text-light`
+
+### 2️⃣ Elements
+
+| Element                           | Description                      | Classes / Notes                                       |
+| --------------------------------- | -------------------------------- | ----------------------------------------------------- |
+| **Header**                        | “User Preferences”               | `<h4 class="fw-semibold mb-4">User Preferences</h4>`  |
+| **Current grade input**           | `%` value for EoC formula        | `form-floating mb-3 w-50`                             |
+| **Default prioritization method** | Radio group (DDS, DoD, B2D, EoC) | `form-check form-check-inline` with `bg-dark` styling |
+| **Theme toggle**                  | Dark / Light                     | `form-switch mb-3` (optional future enhancement)      |
+| **Save button**                   | Update user prefs                | `btn btn-primary px-4`                                |
+
+### 3️⃣ Extra
+
+Show explanation tooltip beside each formula using Bootstrap tooltips:
+
+```html
+<i class="bi bi-info-circle text-primary ms-1" data-bs-toggle="tooltip" title="DDS: Focuses on earliest deadlines first"></i>
+```
+
+---
+
+## 📊 Page 5 — Reports / Insights (optional future feature)
+
+If you add analytics later:
+
+### Layout
+
+`container py-5`
+
+### Elements
+
+| Element       | Description                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| Chart area    | Priority score distribution (use Bootstrap card + chart.js inside) |
+| Summary stats | “Total tasks completed”, “Avg difficulty handled”, etc.            |
+| Date filter   | `form-select` or date range picker                                 |
+
+### Style
+
+* Cards: `card bg-dark border-0 shadow-sm p-3`
+* Chart canvas: centered inside responsive container.
+
+---
+
+## 🧩 Shared Components
+
+### 1️⃣ Toast Notifications
+
+Use Bootstrap’s toast for quick feedback.
+
+```html
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-success border-0">
+    <div class="d-flex">
+      <div class="toast-body">Assignment saved successfully!</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+```
+
+### 2️⃣ Loading Spinner
+
+`<div class="spinner-border text-primary" role="status"></div>`
+
+### 3️⃣ Modal Confirmations
+
+For delete / mark-complete confirmations, use small centered modals with warning accent.
+
+---
+
+## 🧠 Responsive Behavior Summary
+
+| Breakpoint             | Layout                                                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **<768 px (mobile)**   | Sidebar collapses into offcanvas (`btn btn-outline-light` toggler in navbar). Cards stack in single column. |
+| **≥768 px (tablet)**   | Sidebar fixed; 2-column card grid.                                                                          |
+| **≥1200 px (desktop)** | Full dashboard with 3-column card grid.                                                                     |
+
+---
+
+## 🧭 Interaction & UX Cues
+
+* Hover state: cards lift slightly (`transform: translateY(-3px); box-shadow: …`).
+* Priority badges change color by urgency (`bg-success` for >7 days, `bg-warning` for 3–6 days, `bg-danger` for <3 days).
+* Smooth transitions (`transition: all .2s ease-in-out;`).
+* Tooltips for all icons.
+* Confirmation toast after saving, deleting, or marking complete.
+
+---
+
