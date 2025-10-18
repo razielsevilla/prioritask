@@ -1,4 +1,4 @@
-// src/components/Sidebar.jsx
+// File: c:\Users\razie\Desktop\Prioritask_Project\frontend\src\components\Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
@@ -27,6 +27,18 @@ export default function Sidebar() {
               }
             >
               <i className="bi bi-house me-2"></i> Dashboard
+            </NavLink>
+          </li>
+          <li className="nav-item mb-2">
+            <NavLink
+              to="/accomplished"
+              className={({ isActive }) =>
+                `nav-link d-flex align-items-center text-light fw-semibold ${
+                  isActive ? "bg-primary bg-opacity-25 rounded px-2" : ""
+                }`
+              }
+            >
+              <i className="bi bi-house me-2"></i> Accomplished
             </NavLink>
           </li>
           <li className="nav-item mb-2">

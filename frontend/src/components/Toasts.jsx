@@ -1,4 +1,4 @@
-// src/components/Toasts.jsx
+// File: c:\Users\razie\Desktop\Prioritask_Project\frontend\src\components\Toasts.jsx
 import { useEffect } from "react";
 import { Toast } from "bootstrap";
 
