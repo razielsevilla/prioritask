@@ -1,2 +1,2 @@
 # prioritask
-An Assignment Prioritization Application using ReactJS, Bootstrap, and Laravel
+An Assignment Prioritization Application using React + Vite, Bootstrap, and Laravel
