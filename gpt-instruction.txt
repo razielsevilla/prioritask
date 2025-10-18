@@ -780,3 +780,284 @@ For delete / mark-complete confirmations, use small centered modals with warning
 
 ---
 
+# 🎨 PrioriTask UI Guide — “Tech Minimal” Theme (Bootstrap 5)
+
+---
+
+## 🌑 Theme Overview
+
+**Goal:** A dark, modern dashboard aesthetic — efficient, data-driven, and professional.
+
+**Visual feel:**
+
+* Background: `#0F172A` (deep navy)
+* Cards: `#1E293B` (slate gray)
+* Text: `#F8FAFC` (light)
+* Primary accent: `#38BDF8` (sky blue)
+* Secondary accent: `#FACC15` (gold, for urgency)
+* Shadows: subtle `box-shadow: 0 2px 6px rgba(0,0,0,0.4)`
+
+**Fonts:**
+
+* Headings → `Montserrat` (semibold)
+* Body → `Inter` (regular)
+
+**Bootstrap base:**
+Use `data-bs-theme="dark"` or Bootswatch **Darkly** as base, then override colors in a custom stylesheet.
+
+---
+
+## 🧭 Page 1 — Login / Register Page
+
+### 1️⃣ Layout
+
+* **Container:** `container d-flex justify-content-center align-items-center vh-100`
+* **Card:** `card bg-dark text-light shadow-lg p-4`
+
+  * Width: `400px` on desktop, full width on mobile.
+
+### 2️⃣ Elements
+
+| Element           | Description                                      | Bootstrap Classes / Notes                                             |
+| ----------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
+| **Logo**          | App name “PrioriTask”                            | `<h2 class="text-primary fw-bold text-center mb-4">PrioriTask</h2>`   |
+| **Tabs**          | Toggle between Login / Register                  | `nav nav-tabs nav-fill mb-3` with two `<button class="nav-link">`     |
+| **Form Fields**   | Email, Password (+ Confirm Password if Register) | `form-floating mb-3`, `form-control bg-secondary text-light border-0` |
+| **Remember me**   | Checkbox                                         | `form-check form-switch`                                              |
+| **Submit Button** | Login/Register                                   | `btn btn-primary w-100 py-2 fw-semibold`                              |
+| **Footer link**   | “Don’t have an account? Register now.”           | `text-center text-muted mt-3 small`                                   |
+
+### 3️⃣ Interactions
+
+* Validate fields live (Bootstrap validation states).
+* Show spinner in button when loading.
+
+---
+
+## 🏠 Page 2 — Dashboard (Main Page)
+
+### 1️⃣ Layout
+
+* **Wrapper:** `d-flex vh-100`
+
+  * **Sidebar (Left):** fixed vertical nav, `col-2 col-lg-2 bg-dark p-3 border-end border-secondary`
+  * **Main Content (Right):** `flex-grow-1 bg-body p-4 overflow-auto`
+
+---
+
+### 2️⃣ Sidebar (Navigation Panel)
+
+| Element          | Description                                    | Classes / Behavior                                                                                                                                                                  |
+| ---------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Logo/Header**  | “PrioriTask” title                             | `<h4 class="text-primary fw-bold mb-4 text-center">PrioriTask</h4>`                                                                                                                 |
+| **Nav Links**    | Dashboard, Add Assignment, Preferences, Logout | `<ul class="nav flex-column"> <li class="nav-item"><a class="nav-link text-light d-flex align-items-center gap-2" href="#"><i class="bi bi-house"></i> Dashboard</a></li> ...</ul>` |
+| **Active link**  | Highlighted route                              | `nav-link active bg-primary bg-opacity-25 rounded`                                                                                                                                  |
+| **User summary** | (optional) small avatar, name, grade           | `d-flex align-items-center gap-2 mt-auto text-secondary small`                                                                                                                      |
+
+---
+
+### 3️⃣ Dashboard Main Content
+
+#### Header Section
+
+| Element        | Description            | Classes / Notes                                                               |
+| -------------- | ---------------------- | ----------------------------------------------------------------------------- |
+| **Top bar**    | Title + Add Button     | `d-flex justify-content-between align-items-center mb-4`                      |
+| **Page title** | “My Assignments”       | `<h3 class="fw-semibold text-light">My Assignments</h3>`                      |
+| **Add button** | Opens assignment modal | `btn btn-primary d-flex align-items-center gap-2` → icon: `bi bi-plus-circle` |
+
+#### Prioritization Controls
+
+| Element               | Description                     | Classes / Notes                                          |
+| --------------------- | ------------------------------- | -------------------------------------------------------- |
+| **Method selector**   | Dropdown for DDS, DoD, B2D, EoC | `form-select bg-dark text-light border-secondary w-auto` |
+| **Sort order toggle** | Button: Asc/Desc                | `btn btn-outline-light btn-sm ms-2`                      |
+| **Refresh button**    | Recalculate priorities          | `btn btn-outline-primary btn-sm ms-2`                    |
+
+#### Assignment Cards Grid
+
+Use Bootstrap responsive grid:
+`<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">`
+
+Each card:
+
+```html
+<div class="col">
+  <div class="card bg-dark text-light border-0 shadow-sm h-100">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h5 class="card-title text-primary mb-0">Assignment Title</h5>
+        <span class="badge bg-warning text-dark">Due in 2 days</span>
+      </div>
+      <p class="card-text text-muted small mb-3">Description or notes...</p>
+
+      <ul class="list-unstyled small mb-3">
+        <li><i class="bi bi-calendar-event me-2 text-secondary"></i> Due: Oct 25</li>
+        <li><i class="bi bi-bar-chart me-2 text-secondary"></i> Difficulty: 7</li>
+        <li><i class="bi bi-star me-2 text-secondary"></i> Points: 50</li>
+      </ul>
+
+      <div class="mt-auto">
+        <div class="progress mb-2" style="height: 6px;">
+          <div class="progress-bar bg-primary" style="width: 70%;"></div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-secondary small">Priority Score: <strong>0.142</strong></span>
+          <button class="btn btn-sm btn-outline-success">Mark Complete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+#### Empty State (if no assignments)
+
+* **Centered message:**
+  `div.d-flex.flex-column.justify-content-center.align-items-center.text-secondary.py-5`
+
+  * Icon: `<i class="bi bi-inbox fs-1 text-secondary mb-3"></i>`
+  * Text: “No assignments yet. Add one to get started.”
+
+---
+
+## ➕ Page 3 — Add / Edit Assignment Modal
+
+**Trigger:** “Add Assignment” button on Dashboard.
+
+### Modal Structure
+
+```html
+<div class="modal fade" id="assignmentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-0 shadow-lg">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Add New Assignment</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- form here -->
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### Form Fields
+
+| Field            | Description        | Bootstrap classes           |
+| ---------------- | ------------------ | --------------------------- |
+| Title            | Assignment title   | `form-floating mb-3`        |
+| Description      | Optional           | `form-floating mb-3`        |
+| Due Date         | Date picker        | `form-floating mb-3`        |
+| Points           | Benefit/Points (B) | `form-floating mb-3`        |
+| Weight           | Grade weight (W)   | `form-floating mb-3`        |
+| Difficulty       | 1–10 slider        | `form-label` + `form-range` |
+| Estimated Effort | Hours or minutes   | `form-floating mb-3`        |
+| Completed        | Checkbox           | `form-check form-switch`    |
+
+All inputs:
+`class="form-control bg-secondary text-light border-0"`
+
+---
+
+## ⚙️ Page 4 — Preferences Page
+
+### 1️⃣ Layout
+
+`container py-5 text-light`
+
+### 2️⃣ Elements
+
+| Element                           | Description                      | Classes / Notes                                       |
+| --------------------------------- | -------------------------------- | ----------------------------------------------------- |
+| **Header**                        | “User Preferences”               | `<h4 class="fw-semibold mb-4">User Preferences</h4>`  |
+| **Current grade input**           | `%` value for EoC formula        | `form-floating mb-3 w-50`                             |
+| **Default prioritization method** | Radio group (DDS, DoD, B2D, EoC) | `form-check form-check-inline` with `bg-dark` styling |
+| **Theme toggle**                  | Dark / Light                     | `form-switch mb-3` (optional future enhancement)      |
+| **Save button**                   | Update user prefs                | `btn btn-primary px-4`                                |
+
+### 3️⃣ Extra
+
+Show explanation tooltip beside each formula using Bootstrap tooltips:
+
+```html
+<i class="bi bi-info-circle text-primary ms-1" data-bs-toggle="tooltip" title="DDS: Focuses on earliest deadlines first"></i>
+```
+
+---
+
+## 📊 Page 5 — Reports / Insights (optional future feature)
+
+If you add analytics later:
+
+### Layout
+
+`container py-5`
+
+### Elements
+
+| Element       | Description                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| Chart area    | Priority score distribution (use Bootstrap card + chart.js inside) |
+| Summary stats | “Total tasks completed”, “Avg difficulty handled”, etc.            |
+| Date filter   | `form-select` or date range picker                                 |
+
+### Style
+
+* Cards: `card bg-dark border-0 shadow-sm p-3`
+* Chart canvas: centered inside responsive container.
+
+---
+
+## 🧩 Shared Components
+
+### 1️⃣ Toast Notifications
+
+Use Bootstrap’s toast for quick feedback.
+
+```html
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-success border-0">
+    <div class="d-flex">
+      <div class="toast-body">Assignment saved successfully!</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+```
+
+### 2️⃣ Loading Spinner
+
+`<div class="spinner-border text-primary" role="status"></div>`
+
+### 3️⃣ Modal Confirmations
+
+For delete / mark-complete confirmations, use small centered modals with warning accent.
+
+---
+
+## 🧠 Responsive Behavior Summary
+
+| Breakpoint             | Layout                                                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **<768 px (mobile)**   | Sidebar collapses into offcanvas (`btn btn-outline-light` toggler in navbar). Cards stack in single column. |
+| **≥768 px (tablet)**   | Sidebar fixed; 2-column card grid.                                                                          |
+| **≥1200 px (desktop)** | Full dashboard with 3-column card grid.                                                                     |
+
+---
+
+## 🧭 Interaction & UX Cues
+
+* Hover state: cards lift slightly (`transform: translateY(-3px); box-shadow: …`).
+* Priority badges change color by urgency (`bg-success` for >7 days, `bg-warning` for 3–6 days, `bg-danger` for <3 days).
+* Smooth transitions (`transition: all .2s ease-in-out;`).
+* Tooltips for all icons.
+* Confirmation toast after saving, deleting, or marking complete.
+
+---
+
