@@ -1,4 +1,4 @@
-// src/context/AuthContext.jsx
+// File: c:\Users\razie\Desktop\Prioritask_Project\frontend\src\context\AuthContext.jsx
 import { createContext, useState, useEffect } from "react";
 import api from "../api";
 

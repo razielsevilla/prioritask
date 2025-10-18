@@ -1,4 +1,4 @@
-// src/pages/Preferences.jsx
+// File: c:\Users\razie\Desktop\Prioritask_Project\frontend\src\pages\Preferences.jsx
 import Sidebar from "../components/Sidebar";
 
 export default function Preferences() {
