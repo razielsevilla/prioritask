@@ -12,6 +12,8 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
     effort: 60,
   });
 
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     if (editingAssignment) {
       setFormData({
@@ -49,6 +51,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const data = {
       title: formData.title,
       description: formData.description,
@@ -58,7 +61,12 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
       difficulty: parseInt(formData.difficulty),
       estimated_effort: parseInt(formData.effort),
     };
-    await onSave(data);
+    try {
+      await onSave(data);
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -72,7 +80,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
       <div
         className="text-light shadow-lg p-4 position-relative"
         style={{
-          background: "linear-gradient(160deg, #1e1e1e, #2b2b2b)", // 🔹 Same as AssignmentCard
+          background: "linear-gradient(160deg, #1e1e1e, #2b2b2b)",
           boxShadow: "0 0 15px rgba(0, 0, 0, 0.6)",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: "18px",
@@ -95,6 +103,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
             height: "36px",
           }}
           onClick={onClose}
+          disabled={loading}
         >
           <i className="bi bi-x-lg"></i>
         </button>
@@ -120,7 +129,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
             <div
               className="d-flex flex-column justify-content-between"
               style={{
-                background: "linear-gradient(160deg, #222, #2b2b2b)", // subtle match
+                background: "linear-gradient(160deg, #222, #2b2b2b)",
                 border: "1px solid rgba(255,255,255,0.05)",
                 borderRadius: "10px",
                 padding: "1rem",
@@ -134,6 +143,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
                   onChange={handleChange}
                   placeholder="Title"
                   required
+                  disabled={loading}
                 />
                 <FloatingTextarea
                   label="Description"
@@ -141,8 +151,8 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
                   value={formData.description}
                   onChange={handleChange}
                   placeholder="Description"
+                  disabled={loading}
                 />
-
                 {/* Estimated Effort */}
                 <div
                   className="floating-box d-flex flex-column"
@@ -161,6 +171,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
                     className="form-range"
                     value={formData.effort}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   <div className="text-secondary small">{formData.effort} / 100</div>
                 </div>
@@ -184,16 +195,16 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
                   type="date"
                   value={formData.due_date}
                   onChange={handleChange}
+                  disabled={loading}
                 />
-
                 <FloatingInput
                   label="Points"
                   name="points"
                   type="number"
                   value={formData.points}
                   onChange={handleChange}
+                  disabled={loading}
                 />
-
                 <FloatingInput
                   label="Weight"
                   name="weight"
@@ -203,8 +214,8 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
                   max="1"
                   value={formData.weight}
                   onChange={handleChange}
+                  disabled={loading}
                 />
-
                 {/* Difficulty */}
                 <div
                   className="floating-box d-flex flex-column"
@@ -214,10 +225,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
                     padding: "10px 12px",
                   }}
                 >
-                  <label
-                    className="small mb-1"
-                    style={{ color: "#0d6efd"}}
-                  >
+                  <label className="small mb-1" style={{ color: "#0d6efd" }}>
                     Difficulty (1–3)
                   </label>
                   <select
@@ -231,6 +239,7 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
                     }}
                     value={formData.difficulty}
                     onChange={handleChange}
+                    disabled={loading}
                   >
                     <option value="1" style={{ color: "black" }}>
                       1 - Easy
@@ -255,65 +264,39 @@ export default function AssignmentModal({ isOpen, onClose, onSave, editingAssign
               type="button"
               className="btn btn-outline-secondary px-4"
               onClick={onClose}
+              disabled={loading}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary px-4">
-              {editingAssignment ? "Save Changes" : "Save Assignment"}
+            <button
+              type="submit"
+              className="btn btn-primary px-4 d-flex align-items-center justify-content-center"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Saving...
+                </>
+              ) : editingAssignment ? (
+                "Save Changes"
+              ) : (
+                "Save Assignment"
+              )}
             </button>
           </div>
         </form>
-
-        {/* Floating Label Styles */}
-        <style>
-          {`
-            .floating-group {
-              position: relative;
-              background: rgba(255,255,255,0.05);
-              border-radius: 8px;
-              padding: 16px 12px 8px;
-              transition: all 0.2s ease;
-              height: 100%;
-            }
-
-            .floating-group input,
-            .floating-group textarea {
-              background: transparent;
-              border: none;
-              color: white;
-              width: 100%;
-              outline: none;
-              padding-top: 8px;
-              resize: none;
-            }
-
-            .floating-group label {
-              position: absolute;
-              left: 12px;
-              top: 14px;
-              color: rgba(255,255,255,0.5);
-              font-size: 0.9rem;
-              pointer-events: none;
-              transition: all 0.2s ease;
-            }
-
-            .floating-group input:focus + label,
-            .floating-group input:not(:placeholder-shown) + label,
-            .floating-group textarea:focus + label,
-            .floating-group textarea:not(:placeholder-shown) + label {
-              top: 4px;
-              font-size: 0.75rem;
-              color: #0d6efd;
-            }
-          `}
-        </style>
       </div>
     </div>
   );
 }
 
 /* Floating Input */
-function FloatingInput({ label, name, type = "text", value, onChange, placeholder, required, step, min, max }) {
+function FloatingInput({ label, name, type = "text", value, onChange, placeholder, required, step, min, max, disabled }) {
   return (
     <div className="floating-group">
       <input
@@ -327,6 +310,7 @@ function FloatingInput({ label, name, type = "text", value, onChange, placeholde
         step={step}
         min={min}
         max={max}
+        disabled={disabled}
       />
       <label htmlFor={name}>{label}</label>
     </div>
@@ -334,7 +318,7 @@ function FloatingInput({ label, name, type = "text", value, onChange, placeholde
 }
 
 /* Floating Textarea */
-function FloatingTextarea({ label, name, value, onChange, placeholder }) {
+function FloatingTextarea({ label, name, value, onChange, placeholder, disabled }) {
   return (
     <div className="floating-group">
       <textarea
@@ -344,6 +328,7 @@ function FloatingTextarea({ label, name, value, onChange, placeholder }) {
         value={value}
         onChange={onChange}
         placeholder=" "
+        disabled={disabled}
         style={{ resize: "none" }}
       />
       <label htmlFor={name}>{label}</label>

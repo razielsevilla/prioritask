@@ -1,15 +1,23 @@
 // File: c:\Users\razie\Desktop\Prioritask_Project\frontend\src\components\Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 export default function Sidebar() {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/"); // Redirect to login page
+    setLoading(true);
+    try {
+      await logout();
+      navigate("/"); // Redirect to login page
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,7 +46,7 @@ export default function Sidebar() {
                 }`
               }
             >
-              <i className="bi bi-house me-2"></i> Accomplished
+              <i className="bi bi-check-circle me-2"></i> Accomplished
             </NavLink>
           </li>
           <li className="nav-item mb-2">
@@ -60,9 +68,23 @@ export default function Sidebar() {
       <div className="mt-auto text-center">
         <button
           onClick={handleLogout}
-          className="btn btn-outline-danger w-100 fw-semibold"
+          className="btn btn-outline-danger w-100 fw-semibold d-flex align-items-center justify-content-center"
+          disabled={loading}
         >
-          <i className="bi bi-box-arrow-right me-2"></i> Logout
+          {loading ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Logging out...
+            </>
+          ) : (
+            <>
+              <i className="bi bi-box-arrow-right me-2"></i> Logout
+            </>
+          )}
         </button>
       </div>
     </aside>
