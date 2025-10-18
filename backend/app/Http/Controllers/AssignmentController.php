@@ -12,12 +12,17 @@ class AssignmentController extends Controller
     /**
      * Display all assignments for the authenticated user.
      */
-    public function index()
-    {
-        $user = Auth::user();
-        $assignments = Assignment::where('user_id', $user->id)->get();
-        return response()->json($assignments);
+    public function index(Request $request)
+{
+    $query = Assignment::query()->where('user_id', auth()->id());
+
+    if ($request->has('completed')) {
+        $query->where('completed', $request->boolean('completed'));
     }
+
+    return response()->json($query->latest()->get());
+}
+
 
     /**
      * Store a newly created assignment in storage.
@@ -125,4 +130,6 @@ class AssignmentController extends Controller
 
         return response()->json($ordered);
     }
+
+    
 }

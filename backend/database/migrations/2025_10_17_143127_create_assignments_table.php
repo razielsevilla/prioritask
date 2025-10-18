@@ -1,4 +1,4 @@
-<?php
+<?php // File: c:\Users\razie\Desktop\Prioritask_Project\backend\database\migrations\2025_10_17_143127_create_assignments_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
