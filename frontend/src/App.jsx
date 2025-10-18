@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Preferences from "./pages/Preferences";
+import Accomplished from "./pages/Accomplished";
 
 
 function App() {
@@ -17,7 +18,9 @@ function App() {
         <Route path="/" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
         <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
+        <Route path="/accomplished" element={<Accomplished />} />
         <Route path="/preferences" element={user ? <Preferences /> : <Navigate to="/" />} />
+
       </Routes>
     </Router>
   );
