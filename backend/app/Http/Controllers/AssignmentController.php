@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 class AssignmentController extends Controller
 {
     /**
-     * Display a listing of the resource (all user assignments).
+     * Display all assignments for the authenticated user.
      */
     public function index()
     {
@@ -20,28 +20,29 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created assignment in storage.
      */
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date' => 'nullable|date',
-            'points' => 'integer|min:0',
-            'weight' => 'numeric|min:0',
-            'difficulty' => 'integer|min:1|max:10',
-            'estimated_effort' => 'nullable|integer|min:0',
-        ]);
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'due_date' => 'nullable|date',
+        'points' => 'integer|min:0',
+        'weight' => 'numeric|min:0|max:100',
+        'difficulty' => 'integer|min:1|max:3',
+        'effort' => 'integer|min:60|max:100',
+    ]);
 
-        $validated['user_id'] = Auth::id();
-        $assignment = Assignment::create($validated);
+    $assignment = $request->user()->assignments()->create($validated);
 
-        return response()->json($assignment, 201);
-    }
+    return response()->json($assignment, 201);
+}
+
+
 
     /**
-     * Display the specified resource.
+     * Display the specified assignment.
      */
     public function show(string $id)
     {
@@ -50,27 +51,41 @@ class AssignmentController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified assignment.
      */
     public function update(Request $request, string $id)
     {
         $assignment = Assignment::findOrFail($id);
-        $assignment->update($request->all());
+
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'due_date' => 'nullable|date',
+            'points' => 'integer|min:0',
+            'weight' => 'numeric|min:0',
+            'difficulty' => 'integer|min:1|max:3',
+            'effort' => 'integer|min:60|max:100',
+            'completed' => 'boolean',
+        ]);
+
+        $assignment->update($validated);
+
         return response()->json($assignment);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified assignment from storage.
      */
     public function destroy(string $id)
     {
         $assignment = Assignment::findOrFail($id);
         $assignment->delete();
+
         return response()->json(['message' => 'Assignment deleted successfully']);
     }
 
     /**
-     * Prioritize user assignments based on the selected or saved method.
+     * Prioritize assignments for the authenticated user.
      */
     public function prioritize(Request $request)
     {
@@ -83,6 +98,7 @@ class AssignmentController extends Controller
         $method = $request->input('method', $user->prioritization_method ?? 'dds');
 
         $scores = [];
+
         foreach ($assignments as $a) {
             switch ($method) {
                 case 'dds':
@@ -100,11 +116,13 @@ class AssignmentController extends Controller
                 default:
                     $score = PrioritizationService::ddsScore($a);
             }
+
             $a->priority_score = $score;
             $scores[] = $a;
         }
 
         $ordered = collect($scores)->sortByDesc('priority_score')->values();
+
         return response()->json($ordered);
     }
 }

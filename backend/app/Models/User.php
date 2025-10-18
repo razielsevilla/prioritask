@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Models;
+use App\Models\Assignment;
+
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -20,4 +22,10 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function assignments()
+{
+    return $this->hasMany(\App\Models\Assignment::class);
+}
+
 }
