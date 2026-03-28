@@ -73,6 +73,33 @@ const hoursUntilDue = (dueAt: string): number => {
 
 const FALLBACK_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAOt0i5cAAAAASUVORK5CYII=';
 
+const formatAssignmentContext = (task: Assignment): string => {
+  const parts: string[] = [];
+
+  if (task.course) {
+    parts.push(`Course: ${task.course}`);
+  }
+
+  if (task.difficulty != null) {
+    const diffLevel = task.difficulty >= 7 ? 'High' : task.difficulty >= 4 ? 'Medium' : 'Low';
+    parts.push(`Difficulty: ${diffLevel} (${task.difficulty}/10)`);
+  }
+
+  if (task.effortHours != null) {
+    parts.push(`Effort: ${task.effortHours}h`);
+  }
+
+  if (task.currentGrade != null) {
+    parts.push(`Current Grade: ${task.currentGrade}%`);
+  }
+
+  if (task.benefitPoints != null) {
+    parts.push(`Impact: ${task.benefitPoints} pts`);
+  }
+
+  return parts.length > 0 ? `\n${parts.join('\n')}` : '';
+};
+
 const sendNotification = async (
   task: Assignment,
   title: string,
@@ -134,10 +161,18 @@ const runReminderCheck = async (): Promise<void> => {
 
         if (shouldSendWindowReminder) {
           const roundedDueHours = Math.max(0.1, Number(dueInHours.toFixed(1)));
+          const dueDate = new Date(task.dueAt).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          const contextDetails = formatAssignmentContext(task);
+          const message = `Due: ${dueDate} (in ${roundedDueHours}h)${contextDetails}`;
           const sent = await sendNotification(
             task,
-            'PrioriTask reminder',
-            `${task.title} is due in about ${roundedDueHours} hours (window: ${windowHours}h).`,
+            '⏰ PrioriTask Upcoming',
+            message,
           );
 
           if (sent) {
@@ -151,10 +186,14 @@ const runReminderCheck = async (): Promise<void> => {
 
       const shouldSendOverdue = dueInHours <= 0 && !taskState.overdueSent;
       if (shouldSendOverdue) {
+        const daysOverdue = Math.abs(Math.floor(dueInHours / 24));
+        const contextDetails = formatAssignmentContext(task);
+        const overdueLabel = daysOverdue > 0 ? `${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue` : 'overdue';
+        const message = `${overdueLabel}${contextDetails}`;
         const sent = await sendNotification(
           task,
-          'PrioriTask overdue task',
-          `${task.title} is overdue.`,
+          '🚨 PrioriTask Overdue',
+          message,
         );
 
         if (sent) {
