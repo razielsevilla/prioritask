@@ -6,10 +6,10 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 
 | Phase ID | Subphase | Title | Description | Definition of Done (Checklist) |
 | --- | --- | --- | --- | --- |
-| P1 | P1.1 | Extension Bootstrap | Set up core extension runtime and build pipeline. | - [ ] Manifest V3 file is created and valid.<br>- [ ] Build command produces extension output.<br>- [ ] Unpacked extension loads successfully in Chrome. |
-| P1 | P1.2 | UI Entry Points | Create initial popup and options page entry points. | - [ ] Popup entry point is created.<br>- [ ] Options entry point is created.<br>- [ ] Both pages render basic shell UI without runtime errors. |
-| P1 | P1.3 | Engineering Baseline | Establish TypeScript, linting, and testing baseline. | - [ ] Shared TypeScript config is set up.<br>- [ ] Linting is configured and runnable.<br>- [ ] Test runner is configured and runnable. |
-| P1 | P1.4 | Core Domain Models | Define base models for assignment and settings. | - [ ] Assignment model type/interface is defined.<br>- [ ] Settings model type/interface is defined.<br>- [ ] Model fields align with schema expectations. |
+| P1 | P1.1 | Extension Bootstrap | Set up core extension runtime and build pipeline. | - [x] Manifest V3 file is created and valid.<br>- [x] Build command produces extension output.<br>- [x] Unpacked extension loads successfully in Chrome. |
+| P1 | P1.2 | UI Entry Points | Create initial popup and options page entry points. | - [x] Popup entry point is created.<br>- [x] Options entry point is created.<br>- [x] Both pages render basic shell UI without runtime errors. |
+| P1 | P1.3 | Engineering Baseline | Establish TypeScript, linting, and testing baseline. | - [x] Shared TypeScript config is set up.<br>- [x] Linting is configured and runnable.<br>- [x] Test runner is configured and runnable. |
+| P1 | P1.4 | Core Domain Models | Define base models for assignment and settings. | - [x] Assignment model type/interface is defined.<br>- [x] Settings model type/interface is defined.<br>- [x] Model fields align with schema expectations. |
 
 ## Phase P2: Data and CRUD
 

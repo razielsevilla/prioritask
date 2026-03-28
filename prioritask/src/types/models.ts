@@ -1,4 +1,4 @@
-// src/domain/models/types.ts
+// src/types/models.ts
 
 export type AlgorithmMode = 'DDS' | 'DoD' | 'B2D' | 'EoC';
 export type AssignmentStatus = 'pending' | 'completed';
