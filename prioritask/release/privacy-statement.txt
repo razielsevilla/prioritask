@@ -1,0 +1,19 @@
+PrioriTask Privacy Statement (Draft Final)
+
+Effective date: 2026-03-28
+
+PrioriTask stores assignment and settings data locally in your browser using chrome.storage.local.
+PrioriTask does not transmit your task data to external servers.
+PrioriTask does not use analytics or tracking SDKs.
+PrioriTask does not collect personal identifiers, contacts, or browsing history.
+
+Permissions used:
+- storage: save your assignments and preferences.
+- alarms: run scheduled reminder checks.
+- notifications: show due/risk reminder alerts.
+
+Data retention:
+- Data remains on your local browser profile until you edit/delete tasks or remove extension data.
+
+Contact:
+- Project maintainer: Raziel Sevilla

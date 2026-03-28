@@ -1,0 +1,33 @@
+{
+  "phase": "P6.2",
+  "reviewDate": "2026-03-28",
+  "permissions": [
+    {
+      "name": "storage",
+      "required": true,
+      "justification": "Persist user assignments/settings locally in chrome.storage.local.",
+      "alternativesRejected": ["In-memory only (data loss on reload)"]
+    },
+    {
+      "name": "alarms",
+      "required": true,
+      "justification": "Run periodic due/risk checks in service worker.",
+      "alternativesRejected": ["No scheduler would miss reminders"]
+    },
+    {
+      "name": "notifications",
+      "required": true,
+      "justification": "Deliver due, overdue, and risk alerts requested by user.",
+      "alternativesRejected": ["Badge-only alerts are less visible and miss urgency"]
+    }
+  ],
+  "hostPermissions": [],
+  "remoteDataCollection": false,
+  "thirdPartyAnalytics": false,
+  "piiStored": false,
+  "result": {
+    "permissionsMinimalAndJustified": true,
+    "privacyStatementFinalized": true,
+    "noUnnecessaryDataCollection": true
+  }
+}
