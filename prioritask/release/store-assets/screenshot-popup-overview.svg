@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <rect width="1280" height="800" fill="#0b1220"/>
+  <rect x="80" y="60" width="1120" height="680" rx="24" fill="#f8fafc"/>
+  <text x="130" y="130" font-size="42" font-family="Segoe UI, Arial" fill="#0f172a">PrioriTask Popup Overview</text>
+  <text x="130" y="180" font-size="24" font-family="Segoe UI, Arial" fill="#334155">Ranked tasks with priority score, reason tags, and confidence indicators.</text>
+  <rect x="130" y="230" width="1020" height="110" rx="14" fill="#fee2e2" stroke="#ef4444"/>
+  <text x="160" y="292" font-size="28" font-family="Segoe UI, Arial" fill="#991b1b">#1 Midterm Report - CRITICAL</text>
+  <rect x="130" y="370" width="1020" height="110" rx="14" fill="#e2e8f0"/>
+  <text x="160" y="432" font-size="28" font-family="Segoe UI, Arial" fill="#0f172a">#2 Lab Reflection - Priority 7.4</text>
+</svg>

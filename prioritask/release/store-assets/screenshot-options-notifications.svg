@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <rect width="1280" height="800" fill="#0f172a"/>
+  <rect x="80" y="60" width="1120" height="680" rx="24" fill="#f8fafc"/>
+  <text x="130" y="130" font-size="42" font-family="Segoe UI, Arial" fill="#0f172a">Options and Notifications</text>
+  <text x="130" y="178" font-size="24" font-family="Segoe UI, Arial" fill="#334155">Control reminders, windows, and schedule checks.</text>
+  <rect x="130" y="230" width="1020" height="360" rx="16" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="170" y="288" font-size="24" font-family="Segoe UI, Arial" fill="#0f172a">☑ Enable Chrome Notifications</text>
+  <text x="170" y="348" font-size="24" font-family="Segoe UI, Arial" fill="#0f172a">Reminder Windows: 48, 24, 6</text>
+  <text x="170" y="408" font-size="24" font-family="Segoe UI, Arial" fill="#0f172a">Check Interval: 30 minutes</text>
+</svg>

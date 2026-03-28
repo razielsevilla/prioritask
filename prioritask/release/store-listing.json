@@ -1,0 +1,36 @@
+{
+  "phase": "P6.3",
+  "extensionName": "PrioriTask",
+  "category": "Productivity",
+  "language": "en",
+  "summary": "Prioritize assignments and reduce decision fatigue with explainable ranking.",
+  "shortDescription": "Rank school tasks by urgency, effort, and risk with transparent reasons.",
+  "detailedDescription": [
+    "PrioriTask helps students choose what to work on next using ranking algorithms and explainable reason tags.",
+    "Use DDS, DoD, B2D, and EoC modes, plus risk overlays, to make confident decisions quickly.",
+    "Receive due, overdue, and schedule-risk reminders while keeping all task data local to your browser."
+  ],
+  "metadata": {
+    "singlePurpose": "Task prioritization for students",
+    "permissions": ["storage", "alarms", "notifications"],
+    "privacyPolicyFile": "release/privacy-statement.txt",
+    "supportUrl": "https://github.com/razielsevilla/prioritask",
+    "version": "1.0.0"
+  },
+  "assets": {
+    "icons": [
+      "public/favicon.svg",
+      "public/icons.svg"
+    ],
+    "screenshots": [
+      "release/store-assets/screenshot-popup-overview.svg",
+      "release/store-assets/screenshot-filters-and-tags.svg",
+      "release/store-assets/screenshot-options-notifications.svg"
+    ]
+  },
+  "result": {
+    "storeDescriptionComplete": true,
+    "screenshotsAndIconsPrepared": true,
+    "categoryAndMetadataFinalized": true
+  }
+}
