@@ -1,0 +1,20 @@
+PrioriTask Release Notes - v1.0.1
+Date: 2026-03-28
+
+Highlights:
+- Completed Phase 5 UX refinement (ranked list clarity, explainability, filters, onboarding, usability validation).
+- Completed Phase 6 hardening artifacts for QA, privacy review, store listing prep, packaging, and release gate.
+- Added validated upload package: release/prioritask-v1.0.1.zip.
+
+Quality and Validation:
+- Build passes on production configuration.
+- Automated tests passing (19 tests).
+- Regression report completed: release/qa-regression-report.json.
+
+Privacy and Permissions:
+- Permission justification documented.
+- Privacy statement finalized.
+- No remote data collection or analytics.
+
+Upgrade Notes:
+- Version updated to 1.0.1 in manifest and package metadata.

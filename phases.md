@@ -59,7 +59,7 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 | P6 | P6.2 | Permission and Privacy Review | Finalize security posture and user privacy messaging. | - [x] Permissions are minimal and justified.<br>- [x] Privacy statement/copy is finalized.<br>- [x] No unnecessary data collection is present. |
 | P6 | P6.3 | Store Listing Preparation | Prepare all Chrome Web Store listing assets and content. | - [x] Store description is complete.<br>- [x] Screenshots and icons are prepared.<br>- [x] Category and metadata are finalized. |
 | P6 | P6.4 | Versioning and Packaging | Build and package releasable extension artifact. | - [x] Version number is updated.<br>- [x] Production build is generated.<br>- [x] Upload-ready package is created and validated. |
-| P6 | P6.5 | Release Readiness Gate | Final go/no-go gate before store submission. | - [ ] QA checklist passes.<br>- [ ] Release notes are finalized.<br>- [ ] Package is ready for Web Store upload. |
+| P6 | P6.5 | Release Readiness Gate | Final go/no-go gate before store submission. | - [x] QA checklist passes.<br>- [x] Release notes are finalized.<br>- [x] Package is ready for Web Store upload. |
 
 ## Progress Tracking Template
 

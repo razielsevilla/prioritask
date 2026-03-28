@@ -1,0 +1,22 @@
+{
+  "phase": "P6.5",
+  "version": "1.0.1",
+  "gateDate": "2026-03-28",
+  "evidence": {
+    "qaChecklist": "release/qa-regression-report.json",
+    "privacyReview": "release/permissions-privacy-review.json",
+    "storeListing": "release/store-listing.json",
+    "packageValidation": "release/package-validation.json",
+    "releaseNotes": "release/release-notes-v1.0.1.txt"
+  },
+  "checks": {
+    "qaChecklistPasses": true,
+    "releaseNotesFinalized": true,
+    "packageReadyForWebStoreUpload": true
+  },
+  "decision": "GO",
+  "notes": [
+    "Upload package validated at release/prioritask-v1.0.1.zip.",
+    "Proceed to Chrome Web Store submission with prepared metadata and assets."
+  ]
+}
