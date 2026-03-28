@@ -163,6 +163,11 @@ export default function Popup() {
     }
   };
 
+  const isCriticalTask = (task: ComputedAssignment): boolean => {
+    return task.safeDaysLeft <= 0.5
+      || task.explanationReasons.some((tag) => tag.includes('Critical Risk') || tag.includes('Overdue'));
+  };
+
   return (
     <div style={{ padding: '16px', minWidth: '380px', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
@@ -236,18 +241,42 @@ export default function Popup() {
 
       {/* List Section */}
       <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {assignments.length > 0 ? (
+          <p style={{ fontSize: '11px', color: '#666' }}>
+            Ranked highest-to-lowest priority. Critical tasks are highlighted.
+          </p>
+        ) : null}
         {assignments.length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>No pending tasks. Relax!</p> : null}
         
-        {assignments.map((task) => (
+        {assignments.map((task, index) => {
+          const critical = isCriticalTask(task);
+
+          return (
           <div key={task.id} style={{ 
-            border: '1px solid #ccc',
+            border: critical ? '1px solid #ef4444' : '1px solid #ccc',
             padding: '12px',
             borderRadius: '8px',
-            backgroundColor: task.safeDaysLeft <= 0.5 ? '#fff5f5' : '#fff'
+            backgroundColor: critical ? '#fff5f5' : '#fff',
+            boxShadow: critical ? '0 2px 8px rgba(239, 68, 68, 0.15)' : 'none'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+              <div style={{ minWidth: '34px', textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  borderRadius: '999px',
+                  backgroundColor: critical ? '#ef4444' : '#e5e7eb',
+                  color: critical ? '#fff' : '#111827',
+                  padding: '6px 0'
+                }}>
+                  #{index + 1}
+                </div>
+              </div>
               <div>
-                <h4 style={{ margin: '0 0 4px 0' }}>{task.title}</h4>
+                <h4 style={{ margin: '0 0 4px 0' }}>
+                  {task.title}
+                  {critical ? <span style={{ marginLeft: '6px', fontSize: '10px', color: '#b91c1c' }}>CRITICAL</span> : null}
+                </h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                   {task.explanationReasons.map((tag) => (
                     <span
@@ -292,7 +321,7 @@ export default function Popup() {
               </label>
             </div>
           </div>
-        ))}
+        );})}
       </div>
     </div>
   );
