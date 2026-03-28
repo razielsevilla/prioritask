@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { repository } from '../storage/repository';
 import { rankAssignments } from '../utils/pipeline';
 import type { Assignment, AlgorithmMode, ComputedAssignment, UserSettings } from '../types/models';
@@ -19,12 +19,14 @@ const DEFAULT_SETTINGS: UserSettings = {
 };
 
 export default function Popup() {
+  const [allAssignments, setAllAssignments] = useState<Assignment[]>([]);
   const [assignments, setAssignments] = useState<ComputedAssignment[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState<AlgorithmMode>('DDS');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'today' | 'week' | 'overdue' | 'completed'>('all');
 
   // Form State
   const [title, setTitle] = useState('');
@@ -45,6 +47,7 @@ export default function Popup() {
       const savedSettings = await repository.getSettings();
       const activeSettings = savedSettings ?? DEFAULT_SETTINGS;
 
+      setAllAssignments(rawData);
       setSettings(activeSettings);
       if (!settings) {
         setMode(activeSettings.defaultMode);
@@ -110,7 +113,7 @@ export default function Popup() {
       effortHours: validationResult.data.effortHours,
       currentGrade: null,
       status: 'pending',
-      createdAt: editingId ? (assignments.find((a) => a.id === editingId)?.createdAt || now) : now,
+      createdAt: editingId ? (allAssignments.find((a) => a.id === editingId)?.createdAt || now) : now,
       updatedAt: now,
     };
 
@@ -225,6 +228,76 @@ export default function Popup() {
     return 'Balanced by urgency and effort';
   };
 
+  const filteredAssignments = useMemo<ComputedAssignment[]>(() => {
+    const now = new Date();
+    const nowTime = now.getTime();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
+    const weekEnd = nowTime + (7 * 24 * 60 * 60 * 1000);
+
+    if (activeFilter === 'completed') {
+      return allAssignments
+        .filter((task) => task.status === 'completed')
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .map((task) => ({
+          ...task,
+          safeDaysLeft: 999,
+          baseScore: 0,
+          riskScore: 0,
+          finalPriorityScore: 0,
+          explanationReasons: ['Completed'],
+        }));
+    }
+
+    if (activeFilter === 'today') {
+      return assignments.filter((task) => {
+        const dueTime = new Date(task.dueAt).getTime();
+        return dueTime >= todayStart && dueTime < tomorrowStart;
+      });
+    }
+
+    if (activeFilter === 'week') {
+      return assignments.filter((task) => {
+        const dueTime = new Date(task.dueAt).getTime();
+        return dueTime >= nowTime && dueTime <= weekEnd;
+      });
+    }
+
+    if (activeFilter === 'overdue') {
+      return assignments.filter((task) => new Date(task.dueAt).getTime() < nowTime);
+    }
+
+    return assignments;
+  }, [activeFilter, assignments, allAssignments]);
+
+  const filteredAssignmentsForLabel = (filter: 'today' | 'week' | 'overdue' | 'completed'): number => {
+    const now = new Date();
+    const nowTime = now.getTime();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
+    const weekEnd = nowTime + (7 * 24 * 60 * 60 * 1000);
+
+    if (filter === 'completed') {
+      return allAssignments.filter((task) => task.status === 'completed').length;
+    }
+
+    if (filter === 'today') {
+      return assignments.filter((task) => {
+        const dueTime = new Date(task.dueAt).getTime();
+        return dueTime >= todayStart && dueTime < tomorrowStart;
+      }).length;
+    }
+
+    if (filter === 'week') {
+      return assignments.filter((task) => {
+        const dueTime = new Date(task.dueAt).getTime();
+        return dueTime >= nowTime && dueTime <= weekEnd;
+      }).length;
+    }
+
+    return assignments.filter((task) => new Date(task.dueAt).getTime() < nowTime).length;
+  };
+
   return (
     <div style={{ padding: '16px', minWidth: '380px', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
@@ -298,14 +371,49 @@ export default function Popup() {
 
       {/* List Section */}
       <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {[
+            { key: 'all', label: `All (${assignments.length})` },
+            { key: 'today', label: `Today (${filteredAssignmentsForLabel('today')})` },
+            { key: 'week', label: `This Week (${filteredAssignmentsForLabel('week')})` },
+            { key: 'overdue', label: `Overdue (${filteredAssignmentsForLabel('overdue')})` },
+            { key: 'completed', label: `Completed (${filteredAssignmentsForLabel('completed')})` },
+          ].map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={() => setActiveFilter(filter.key as 'all' | 'today' | 'week' | 'overdue' | 'completed')}
+              style={{
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderRadius: '999px',
+                border: activeFilter === filter.key ? '1px solid #2563eb' : '1px solid #d1d5db',
+                backgroundColor: activeFilter === filter.key ? '#eff6ff' : '#fff',
+                color: activeFilter === filter.key ? '#1d4ed8' : '#374151',
+                cursor: 'pointer',
+              }}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
         {assignments.length > 0 ? (
           <p style={{ fontSize: '11px', color: '#666' }}>
             Ranked highest-to-lowest priority. Critical tasks are highlighted.
           </p>
         ) : null}
-        {assignments.length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>No pending tasks. Relax!</p> : null}
+        {filteredAssignments.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#666' }}>
+            {activeFilter === 'today' && 'No tasks due today.'}
+            {activeFilter === 'week' && 'No tasks due this week.'}
+            {activeFilter === 'overdue' && 'No overdue tasks. Great job!'}
+            {activeFilter === 'completed' && 'No completed tasks yet.'}
+            {activeFilter === 'all' && 'No pending tasks. Relax!'}
+          </p>
+        ) : null}
         
-        {assignments.map((task, index) => {
+        {filteredAssignments.map((task, index) => {
           const critical = isCriticalTask(task);
           const confidence = getConfidenceForTask(task);
 
