@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DDS_safe, DoD_safe, getSafeDaysLeft } from './algorithms';
+import { DDS_safe, DoD_safe, getSafeDaysLeft, calculateFSR, applyRiskBoost } from './algorithms';
 import type { Assignment, UserSettings } from '../types/models';
 
 describe('Scoring Engine Algorithms', () => {
@@ -51,5 +51,59 @@ describe('Scoring Engine Algorithms', () => {
     // Difficulty(8) * Alpha(0.5) / 1.1 = 4 / 1.1 = 3.636...
     const score = DoD_safe(mockAssignment, mockSettings);
     expect(score).toBeCloseTo(3.636, 2);
+  });
+});
+
+describe('FSR and Risk Overlay', () => {
+  const mockSettings: UserSettings = {
+    defaultMode: 'DDS',
+    alpha: 0.5,
+    epsilon: 0.1,
+    gamma: 1.0,
+    defaultNeed: 5,
+    uncertaintyDefault: 5,
+    availableHoursPerDay: 4, // 4 hours available per day
+    reminderWindows: [24],
+    notificationEnabled: false,
+    updatedAt: new Date().toISOString(),
+  };
+
+  it('calculates FSR ratio correctly', () => {
+    // Due in 24 hours (1 day). D_safe = 1 + epsilon(0.1) = 1.1
+    // Capacity = 1.1 days * 4 hours/day = 4.4 hours
+    // Effort = 2 hours.
+    // FSR = 2 / 4.4 = 0.4545...
+    const mockAssignment: Assignment = {
+      id: '123',
+      title: 'Test',
+      course: null,
+      dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      mode: 'DDS',
+      difficulty: null,
+      benefitPoints: null,
+      weight: null,
+      effortHours: 2,
+      currentGrade: null,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const fsr = calculateFSR(mockAssignment, mockSettings);
+    expect(fsr).toBeCloseTo(0.454, 2);
+  });
+
+  it('applies no boost when risk is healthy (< 75%)', () => {
+    expect(applyRiskBoost(10, 0.50)).toBe(10);
+  });
+
+  it('applies warning boost when risk crosses 75%', () => {
+    // 10 * 3 = 30
+    expect(applyRiskBoost(10, 0.80)).toBe(30);
+  });
+
+  it('applies critical boost when risk crosses 100%', () => {
+    // 10 * 10 = 100
+    expect(applyRiskBoost(10, 1.20)).toBe(100);
   });
 });
