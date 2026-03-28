@@ -1,34 +1,29 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { repository } from '../storage/repository';
-import type { Assignment, AlgorithmMode, UserSettings } from '../types/models';
+import { rankAssignments } from '../utils/pipeline';
+import type { Assignment, AlgorithmMode, ComputedAssignment, UserSettings } from '../types/models';
 import { assignmentSchema } from '../types/validators';
 
-const DEFAULT_SORT_MODE: AlgorithmMode = 'DDS';
-const DEFAULT_SETTINGS: Pick<UserSettings, 'defaultMode' | 'alpha' | 'epsilon' | 'defaultNeed'> = {
-  defaultMode: DEFAULT_SORT_MODE,
-  alpha: 1,
-  epsilon: 0.05,
-  defaultNeed: 0.6,
+const DEFAULT_SETTINGS: UserSettings = {
+  defaultMode: 'DDS',
+  alpha: 0.5,
+  epsilon: 0.1,
+  gamma: 0.5,
+  defaultNeed: 5,
+  uncertaintyDefault: 5,
+  availableHoursPerDay: 4,
+  reminderWindows: [48, 24, 6],
+  notificationEnabled: true,
+  updatedAt: new Date().toISOString(),
 };
-
-type RankedAssignment = Assignment & {
-  score: number;
-  rawDaysLeft: number;
-};
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
-
-const getRawDaysLeft = (dueAt: string) => Math.ceil((new Date(dueAt).getTime() - Date.now()) / DAY_MS);
 
 export default function Popup() {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignments, setAssignments] = useState<ComputedAssignment[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
-  const [sortMode, setSortMode] = useState<AlgorithmMode>(DEFAULT_SORT_MODE);
-  const [algorithmSettings, setAlgorithmSettings] = useState(DEFAULT_SETTINGS);
+  const [mode, setMode] = useState<AlgorithmMode>('DDS');
 
   // Form State
   const [title, setTitle] = useState('');
@@ -41,94 +36,23 @@ export default function Popup() {
 
   useEffect(() => {
     void loadAssignments();
-    void loadSettings();
   }, []);
-
-  const loadSettings = async () => {
-    try {
-      const savedSettings = await repository.getSettings();
-      if (!savedSettings) {
-        return;
-      }
-
-      setSortMode(savedSettings.defaultMode ?? DEFAULT_SORT_MODE);
-      setAlgorithmSettings({
-        defaultMode: savedSettings.defaultMode ?? DEFAULT_SORT_MODE,
-        alpha: savedSettings.alpha ?? DEFAULT_SETTINGS.alpha,
-        epsilon: savedSettings.epsilon ?? DEFAULT_SETTINGS.epsilon,
-        defaultNeed: savedSettings.defaultNeed ?? DEFAULT_SETTINGS.defaultNeed,
-      });
-    } catch {
-      setStatusMessage('Unable to load saved sort mode. Using defaults.');
-    }
-  };
-
-  const rankedAssignments = useMemo<RankedAssignment[]>(() => {
-    const scoreFor = (task: Assignment): number => {
-      const rawDaysLeft = getRawDaysLeft(task.dueAt);
-      const d = Math.max(0, rawDaysLeft);
-      const difficultyNorm = clamp((task.difficulty ?? 5) / 10);
-      const benefitNorm = clamp((task.benefitPoints ?? 50) / 100);
-      const weightNorm = clamp((task.weight ?? 50) / 100);
-      const effort = Math.max(task.effortHours ?? 1, 0.5);
-      const gradeNorm = clamp((task.currentGrade ?? 40) / 100);
-      const alpha = Math.max(0.1, algorithmSettings.alpha ?? DEFAULT_SETTINGS.alpha);
-      const epsilon = Math.max(0.0001, algorithmSettings.epsilon ?? DEFAULT_SETTINGS.epsilon);
-      const defaultNeed = clamp(algorithmSettings.defaultNeed ?? DEFAULT_SETTINGS.defaultNeed);
-
-      if (sortMode === 'DDS') {
-        return 1 / (d + 1);
-      }
-
-      if (sortMode === 'DoD') {
-        return difficultyNorm / (d + 1);
-      }
-
-      if (sortMode === 'B2D') {
-        return benefitNorm / ((difficultyNorm + epsilon) * Math.pow(d + 1, alpha));
-      }
-
-      const needFactor = task.currentGrade == null ? defaultNeed : clamp(1 - gradeNorm);
-      return (weightNorm * benefitNorm * needFactor) / ((effort + epsilon) * Math.pow(d + 1, alpha));
-    };
-
-    return assignments
-      .map((task) => ({
-        ...task,
-        score: scoreFor(task),
-        rawDaysLeft: getRawDaysLeft(task.dueAt),
-      }))
-      .sort((a, b) => {
-        if (a.status !== b.status) {
-          return a.status === 'pending' ? -1 : 1;
-        }
-
-        const aOverdue = a.rawDaysLeft < 0;
-        const bOverdue = b.rawDaysLeft < 0;
-        if (aOverdue !== bOverdue) {
-          return aOverdue ? -1 : 1;
-        }
-
-        const scoreDelta = b.score - a.score;
-        if (scoreDelta !== 0) {
-          return scoreDelta;
-        }
-
-        const dueDelta = new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
-        if (dueDelta !== 0) {
-          return dueDelta;
-        }
-
-        return (a.effortHours ?? Number.MAX_SAFE_INTEGER) - (b.effortHours ?? Number.MAX_SAFE_INTEGER);
-      });
-  }, [assignments, sortMode, algorithmSettings]);
 
   const loadAssignments = async () => {
     try {
-      const data = await repository.getAssignments();
-      setAssignments(data);
+      const rawData = await repository.getAssignments();
+      const savedSettings = await repository.getSettings();
+      const activeSettings = savedSettings ?? DEFAULT_SETTINGS;
+
+      setSettings(activeSettings);
+      if (!settings) {
+        setMode(activeSettings.defaultMode);
+      }
+
+      const ranked = rankAssignments(rawData, activeSettings);
+      setAssignments(ranked);
     } catch {
-      setStatusMessage('Unable to load tasks. Please reload the extension and try again.');
+      setStatusMessage('Unable to load tasks or settings. Please reload the extension and try again.');
     }
   };
 
@@ -137,6 +61,7 @@ export default function Popup() {
     setDueAt('');
     setDifficulty('');
     setEffortHours('');
+    setMode(settings?.defaultMode ?? DEFAULT_SETTINGS.defaultMode);
     setEditingId(null);
     setErrors({});
   };
@@ -177,14 +102,14 @@ export default function Popup() {
       title: validationResult.data.title,
       course: null,
       dueAt: new Date(validationResult.data.dueAt).toISOString(),
-      mode: sortMode,
+      mode,
       difficulty: validationResult.data.difficulty,
       benefitPoints: null, 
       weight: null,
       effortHours: validationResult.data.effortHours,
       currentGrade: null,
       status: 'pending',
-      createdAt: editingId ? (assignments.find(a => a.id === editingId)?.createdAt || now) : now,
+      createdAt: editingId ? (assignments.find((a) => a.id === editingId)?.createdAt || now) : now,
       updatedAt: now,
     };
 
@@ -205,6 +130,7 @@ export default function Popup() {
     setEditingId(assignment.id);
     setTitle(assignment.title);
     setDueAt(new Date(assignment.dueAt).toISOString().slice(0, 16));
+    setMode(assignment.mode);
     setDifficulty(assignment.difficulty ?? '');
     setEffortHours(assignment.effortHours ?? '');
     setErrors({});
@@ -237,12 +163,12 @@ export default function Popup() {
   };
 
   return (
-    <div style={{ padding: '16px', minWidth: '350px', fontFamily: 'sans-serif' }}>
+    <div style={{ padding: '16px', minWidth: '380px', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
         <h2 style={{ margin: 0 }}>PrioriTask</h2>
         <label style={{ fontSize: '12px', color: '#444', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          Sort by
-          <select value={sortMode} onChange={(e) => setSortMode(e.target.value as AlgorithmMode)}>
+          Mode
+          <select value={mode} onChange={(e) => setMode(e.target.value as AlgorithmMode)}>
             <option value="DDS">DDS</option>
             <option value="DoD">DoD</option>
             <option value="B2D">B2D</option>
@@ -293,6 +219,12 @@ export default function Popup() {
           </div>
         </div>
 
+        {settings ? (
+          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#666' }}>
+            Ranking uses your saved settings (alpha {settings.alpha}, epsilon {settings.epsilon}, gamma {settings.gamma}).
+          </p>
+        ) : null}
+
         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
           <button type="submit" style={{ flex: 1 }} disabled={isSaving}>{isSaving ? 'Saving...' : (editingId ? 'Update Task' : 'Add Task')}</button>
           {editingId && <button type="button" onClick={resetForm} disabled={isSaving}>Cancel</button>}
@@ -303,29 +235,60 @@ export default function Popup() {
 
       {/* List Section */}
       <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {rankedAssignments.length === 0 ? <p>No tasks yet. Add one above!</p> : null}
+        {assignments.length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>No pending tasks. Relax!</p> : null}
         
-        {rankedAssignments.map(task => (
+        {assignments.map((task) => (
           <div key={task.id} style={{ 
-            border: '1px solid #ccc', padding: '8px', borderRadius: '4px',
-            opacity: task.status === 'completed' ? 0.6 : 1
+            border: '1px solid #ccc',
+            padding: '12px',
+            borderRadius: '8px',
+            backgroundColor: task.safeDaysLeft <= 0.5 ? '#fff5f5' : '#fff'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: '0 0 4px 0', textDecoration: task.status === 'completed' ? 'line-through' : 'none' }}>
-                {task.title}
-              </h4>
-              <input 
-                type="checkbox" 
-                checked={task.status === 'completed'}
-                onChange={() => handleToggleComplete(task)}
-              />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h4 style={{ margin: '0 0 4px 0' }}>{task.title}</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+                  {task.explanationReasons.map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: '10px',
+                        backgroundColor: '#eee',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        color: tag.includes('🚨') || tag.includes('⚠️') ? '#d00' : '#444',
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#007BFF' }}>
+                  {task.finalPriorityScore.toFixed(1)}
+                </div>
+                <div style={{ fontSize: '9px', color: '#999', textTransform: 'uppercase' }}>Priority</div>
+              </div>
             </div>
-            <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>
-              Due: {new Date(task.dueAt).toLocaleString()} | Score: {task.score.toFixed(3)}
+
+            <p style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#666' }}>
+              Due: {new Date(task.dueAt).toLocaleString()}
             </p>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => handleEdit(task)} style={{ fontSize: '12px' }}>Edit</button>
-              <button onClick={() => handleDelete(task.id)} style={{ fontSize: '12px', color: 'red' }} disabled={isSaving}>Delete</button>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => handleEdit(task)} style={{ fontSize: '11px' }}>Edit</button>
+                <button onClick={() => handleDelete(task.id)} style={{ fontSize: '11px', color: 'red' }} disabled={isSaving}>Delete</button>
+              </div>
+              <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="checkbox"
+                  checked={task.status === 'completed'}
+                  onChange={() => handleToggleComplete(task)}
+                /> Done
+              </label>
             </div>
           </div>
         ))}
