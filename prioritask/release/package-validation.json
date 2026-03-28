@@ -1,0 +1,16 @@
+{
+  "phase": "P6.4",
+  "version": "1.0.1",
+  "buildGenerated": true,
+  "artifact": {
+    "path": "release/prioritask-v1.0.1.zip",
+    "sizeBytes": 91781,
+    "containsManifest": true,
+    "uploadReady": true
+  },
+  "result": {
+    "versionUpdated": true,
+    "productionBuildGenerated": true,
+    "uploadPackageCreatedAndValidated": true
+  }
+}
