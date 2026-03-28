@@ -49,7 +49,7 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 | P5 | P5.2 | Explainability UX | Improve trust via reason tags and confidence labels. | - [x] Reason tags are visible on each task row.<br>- [x] Confidence indicator appears when defaults are used.<br>- [x] Users can understand "why this is ranked here" quickly. |
 | P5 | P5.3 | Filter UX | Add practical task views for daily planning. | - [x] Today filter works.<br>- [x] This Week filter works.<br>- [x] Overdue filter works.<br>- [x] Completed filter works. |
 | P5 | P5.4 | Empty and Onboarding States | Reduce first-use friction and dead-end screens. | - [x] Empty state guidance is implemented.<br>- [x] First-task onboarding hint is implemented.<br>- [x] Missing-data hints are user-friendly. |
-| P5 | P5.5 | Usability Validation | Verify speed and clarity of core workflows. | - [ ] User can add and prioritize a task in under 30 seconds.<br>- [ ] Core actions are understandable without external docs.<br>- [ ] No major friction in daily flow scenarios. |
+| P5 | P5.5 | Usability Validation | Verify speed and clarity of core workflows. | - [x] User can add and prioritize a task in under 30 seconds.<br>- [x] Core actions are understandable without external docs.<br>- [x] No major friction in daily flow scenarios. |
 
 ## Phase P6: Hardening and Release
 

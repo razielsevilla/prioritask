@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { repository } from '../storage/repository';
 import { rankAssignments } from '../utils/pipeline';
+import { evaluateAddPrioritizeFlow } from '../utils/usability';
 import type { Assignment, AlgorithmMode, ComputedAssignment, UserSettings } from '../types/models';
 import { assignmentSchema } from '../types/validators';
 
@@ -27,6 +28,7 @@ export default function Popup() {
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState<AlgorithmMode>('DDS');
   const [activeFilter, setActiveFilter] = useState<'all' | 'today' | 'week' | 'overdue' | 'completed'>('all');
+  const [flowStartAt, setFlowStartAt] = useState<number | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -68,6 +70,7 @@ export default function Popup() {
     setMode(settings?.defaultMode ?? DEFAULT_SETTINGS.defaultMode);
     setEditingId(null);
     setErrors({});
+    setFlowStartAt(null);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -121,8 +124,17 @@ export default function Popup() {
       setIsSaving(true);
       await repository.saveAssignment(newAssignment);
       await loadAssignments();
+      const flowFeedback = !editingId && flowStartAt != null
+        ? evaluateAddPrioritizeFlow(Date.now() - flowStartAt)
+        : null;
       resetForm();
-      setStatusMessage(editingId ? 'Task updated.' : 'Task added.');
+      setStatusMessage(
+        editingId
+          ? 'Task updated.'
+          : flowFeedback
+            ? `Task added. ${flowFeedback.message}`
+            : 'Task added.',
+      );
     } catch {
       setStatusMessage('Unable to save task. Please try again.');
     } finally {
@@ -139,6 +151,7 @@ export default function Popup() {
     setEffortHours(assignment.effortHours ?? '');
     setErrors({});
     setStatusMessage('');
+    setFlowStartAt(null);
   };
 
   const handleToggleComplete = async (assignment: Assignment) => {
@@ -339,6 +352,9 @@ export default function Popup() {
         </label>
       </div>
       {statusMessage ? <p style={{ marginTop: '0', color: '#444' }}>{statusMessage}</p> : null}
+      <p style={{ marginTop: '4px', fontSize: '11px', color: '#4b5563' }}>
+        Quick flow: Add task {'>'} pick a filter view {'>'} mark done. Press Enter to save.
+      </p>
       
       {/* Form Section */}
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
@@ -347,7 +363,12 @@ export default function Popup() {
         <div>
           <input 
             type="text" placeholder="Task Title" value={title} 
-            onChange={(e) => setTitle(e.target.value)} 
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (!editingId && flowStartAt == null && e.target.value.trim().length > 0) {
+                setFlowStartAt(Date.now());
+              }
+            }} 
             style={{ width: '100%', borderColor: errors.title ? 'red' : '' }}
           />
           {errors.title && <span style={{ color: 'red', fontSize: '12px' }}>{errors.title}</span>}
