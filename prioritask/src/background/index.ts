@@ -143,14 +143,19 @@ const runReminderCheck = async (): Promise<void> => {
     const reminderWindows = normalizeReminderWindows(settings.reminderWindows);
     const assignments = await repository.getAssignments();
     const pendingAssignments = assignments.filter((assignment) => assignment.status === 'pending');
+    const pendingIds = new Set(pendingAssignments.map((a) => a.id));
 
     const existingState = await getReminderState();
     const nextState: ReminderStateMap = {};
 
+    // [P4.3] Overdue detection and once-per-policy alerts
+    // Only pending tasks are processed; completed tasks never trigger overdue alerts.
+    // Per-task overdue state is cleaned up if the task is marked complete.
     for (const task of pendingAssignments) {
       const dueInHours = hoursUntilDue(task.dueAt);
       const previous = existingState[task.id];
 
+      // [P4.3] Reset state if due date changed (task updated)
       let taskState: TaskReminderState = previous && previous.dueAt === task.dueAt
         ? previous
         : { dueAt: task.dueAt, sentWindows: [], overdueSent: false };
@@ -184,6 +189,8 @@ const runReminderCheck = async (): Promise<void> => {
         }
       }
 
+      // [P4.3] Overdue detection: triggers when dueInHours <= 0 (task has passed deadline)
+      // [P4.3] Once-per-policy: overdueSent flag ensures only one alert per task lifetime
       const shouldSendOverdue = dueInHours <= 0 && !taskState.overdueSent;
       if (shouldSendOverdue) {
         const daysOverdue = Math.abs(Math.floor(dueInHours / 24));
@@ -197,6 +204,7 @@ const runReminderCheck = async (): Promise<void> => {
         );
 
         if (sent) {
+          // [P4.3] Mark as sent to prevent repeat alerts for same task
           taskState = {
             ...taskState,
             overdueSent: true,
@@ -205,6 +213,15 @@ const runReminderCheck = async (): Promise<void> => {
       }
 
       nextState[task.id] = taskState;
+    }
+
+    // [P4.3] Cleanup: remove reminder state for completed/deleted tasks to prevent state bloat
+    for (const taskId of Object.keys(existingState)) {
+      if (!pendingIds.has(taskId)) {
+        // Task is no longer pending (completed or deleted); don't carry over old state
+        // This prevents the reminder state from growing unbounded
+        continue;
+      }
     }
 
     await saveReminderState(nextState);
