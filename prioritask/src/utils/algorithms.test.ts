@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DDS_safe, DoD_safe, getSafeDaysLeft, calculateFSR, applyRiskBoost } from './algorithms';
+import { DDS_safe, DoD_safe, B2D_safe, EoC_safe, getSafeDaysLeft, calculateFSR, applyRiskBoost } from './algorithms';
 import type { Assignment, UserSettings } from '../types/models';
 
 describe('Scoring Engine Algorithms', () => {
@@ -51,6 +51,32 @@ describe('Scoring Engine Algorithms', () => {
     // Difficulty(8) * Alpha(0.5) / 1.1 = 4 / 1.1 = 3.636...
     const score = DoD_safe(mockAssignment, mockSettings);
     expect(score).toBeCloseTo(3.636, 2);
+  });
+  it('calculates B2D accurately', () => {
+    // Benefit(10) / (Difficulty(8) * D_safe(1.1) * Gamma(1.0)) = 10 / 8.8 = 1.136...
+    const score = B2D_safe(mockAssignment, mockSettings);
+    expect(score).toBeCloseTo(1.136, 2);
+  });
+
+  it('calculates EoC accurately', () => {
+    // Weight(20) / (Effort(2) * D_safe(1.1)) = 20 / 2.2 = 9.09...
+    const score = EoC_safe(mockAssignment, mockSettings);
+    expect(score).toBeCloseTo(9.09, 2);
+  });
+
+  it('handles missing values (null difficulty/effort) via defaults', () => {
+    // Edge case: User leaves difficulty and effort blank
+    const missingDataTask: Assignment = { ...mockAssignment, difficulty: null, effortHours: null };
+    
+    // DoD should fall back to uncertaintyDefault (5)
+    // Score = (5 * Alpha(0.5)) / D_safe(1.1) = 2.5 / 1.1 = 2.272...
+    const dodScore = DoD_safe(missingDataTask, mockSettings);
+    expect(dodScore).toBeCloseTo(2.27, 2);
+
+    // FSR should fall back to defaultNeed (5)
+    // Capacity = 1.1 days * 4 hrs = 4.4. FSR = 5 / 4.4 = 1.136...
+    const fsr = calculateFSR(missingDataTask, mockSettings);
+    expect(fsr).toBeCloseTo(1.136, 2);
   });
 });
 

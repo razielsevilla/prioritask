@@ -67,4 +67,29 @@ describe('Ranking Pipeline', () => {
     expect(tags).toContain('⚠️ Critical Risk (Exceeds Capacity)');
     expect(tags).toContain('🧗 High Difficulty');
   });
+
+  it('validates ranking of a comprehensive sample dataset', () => {
+    // Let's create a realistic scenario:
+    const chillTask = createMockTask('chill', 'Read Chapter 1', 72); // Due in 3 days
+    const overdueTask = createMockTask('overdue', 'Math Homework', -10); // Overdue!
+    const urgentTask = createMockTask('urgent', 'Discussion Post', 5); // Due in 5 hours
+    urgentTask.effortHours = 0.5; // Quick task, so it doesn't trigger the FSR risk multiplier
+    const highRiskTask = createMockTask('high-risk', 'Term Paper', 24); // Due in 24 hours
+    highRiskTask.effortHours = 10; // BUT it takes 10 hours, and user only has 4hrs/day! FSR Critical!
+
+    const dataset = [chillTask, highRiskTask, overdueTask, urgentTask]; // Scrambled order
+    
+    const ranked = rankAssignments(dataset, mockSettings);
+
+    // Expected Logic:
+    // 1. 'overdue' (Always first bucket)
+    // 2. 'high-risk' (Has a massive FSR RiskBoost multiplier)
+    // 3. 'urgent' (Standard DDS score, due sooner than chill)
+    // 4. 'chill' (Standard DDS score, due furthest away)
+    
+    expect(ranked[0].id).toBe('overdue');
+    expect(ranked[1].id).toBe('high-risk');
+    expect(ranked[2].id).toBe('urgent');
+    expect(ranked[3].id).toBe('chill');
+  });
 });
