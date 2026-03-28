@@ -6,6 +6,8 @@ import { assignmentSchema } from '../types/validators';
 export default function Popup() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -18,12 +20,16 @@ export default function Popup() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    loadAssignments();
+    void loadAssignments();
   }, []);
 
   const loadAssignments = async () => {
-    const data = await repository.getAssignments();
-    setAssignments(data);
+    try {
+      const data = await repository.getAssignments();
+      setAssignments(data);
+    } catch {
+      setStatusMessage('Unable to load tasks. Please reload the extension and try again.');
+    }
   };
 
   const resetForm = () => {
@@ -38,10 +44,11 @@ export default function Popup() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatusMessage('');
     
     // Prepare the data for validation
     const formData = {
-      title,
+      title: title.trim(),
       dueAt,
       mode,
       difficulty: difficulty === '' ? null : Number(difficulty),
@@ -83,9 +90,17 @@ export default function Popup() {
       updatedAt: now,
     };
 
-    await repository.saveAssignment(newAssignment);
-    await loadAssignments();
-    resetForm();
+    try {
+      setIsSaving(true);
+      await repository.saveAssignment(newAssignment);
+      await loadAssignments();
+      resetForm();
+      setStatusMessage(editingId ? 'Task updated.' : 'Task added.');
+    } catch {
+      setStatusMessage('Unable to save task. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleEdit = (assignment: Assignment) => {
@@ -93,9 +108,10 @@ export default function Popup() {
     setTitle(assignment.title);
     setDueAt(new Date(assignment.dueAt).toISOString().slice(0, 16));
     setMode(assignment.mode);
-    setDifficulty(assignment.difficulty || '');
-    setEffortHours(assignment.effortHours || '');
+    setDifficulty(assignment.difficulty ?? '');
+    setEffortHours(assignment.effortHours ?? '');
     setErrors({});
+    setStatusMessage('');
   };
 
   const handleToggleComplete = async (assignment: Assignment) => {
@@ -104,18 +120,29 @@ export default function Popup() {
       status: (assignment.status === 'pending' ? 'completed' : 'pending') as 'pending' | 'completed',
       updatedAt: new Date().toISOString()
     };
-    await repository.saveAssignment(updated);
-    await loadAssignments();
+    try {
+      await repository.saveAssignment(updated);
+      await loadAssignments();
+      setStatusMessage('Task status updated.');
+    } catch {
+      setStatusMessage('Unable to update task status. Please try again.');
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await repository.deleteAssignment(id);
-    await loadAssignments();
+    try {
+      await repository.deleteAssignment(id);
+      await loadAssignments();
+      setStatusMessage('Task deleted.');
+    } catch {
+      setStatusMessage('Unable to delete task. Please try again.');
+    }
   };
 
   return (
     <div style={{ padding: '16px', minWidth: '350px', fontFamily: 'sans-serif' }}>
       <h2>PrioriTask</h2>
+      {statusMessage ? <p style={{ marginTop: '0', color: '#444' }}>{statusMessage}</p> : null}
       
       {/* Form Section */}
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
@@ -143,6 +170,7 @@ export default function Popup() {
           <option value="DDS">DDS (Due Date)</option>
           <option value="DoD">DoD (Difficulty)</option>
           <option value="B2D">B2D (Benefit/Effort)</option>
+          <option value="EoC">EoC (Effort-over-Complexity)</option>
         </select>
 
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -165,8 +193,8 @@ export default function Popup() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-          <button type="submit" style={{ flex: 1 }}>{editingId ? 'Update Task' : 'Add Task'}</button>
-          {editingId && <button type="button" onClick={resetForm}>Cancel</button>}
+          <button type="submit" style={{ flex: 1 }} disabled={isSaving}>{isSaving ? 'Saving...' : (editingId ? 'Update Task' : 'Add Task')}</button>
+          {editingId && <button type="button" onClick={resetForm} disabled={isSaving}>Cancel</button>}
         </div>
       </form>
 
@@ -196,7 +224,7 @@ export default function Popup() {
             </p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => handleEdit(task)} style={{ fontSize: '12px' }}>Edit</button>
-              <button onClick={() => handleDelete(task.id)} style={{ fontSize: '12px', color: 'red' }}>Delete</button>
+              <button onClick={() => handleDelete(task.id)} style={{ fontSize: '12px', color: 'red' }} disabled={isSaving}>Delete</button>
             </div>
           </div>
         ))}

@@ -15,11 +15,11 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 
 | Phase ID | Subphase | Title | Description | Definition of Done (Checklist) |
 | --- | --- | --- | --- | --- |
-| P2 | P2.1 | Storage Service | Implement data persistence using chrome.storage.local. | - [ ] Storage adapter is implemented.<br>- [ ] Read/write/update/delete methods are available.<br>- [ ] Error handling is implemented for storage failures. |
-| P2 | P2.2 | Assignment CRUD | Build create, edit, complete, and delete task flows. | - [ ] Assignment create flow works.<br>- [ ] Assignment edit flow works.<br>- [ ] Assignment complete toggle works.<br>- [ ] Assignment delete flow works. |
-| P2 | P2.3 | Settings CRUD | Build user settings create and update flow. | - [ ] Settings save flow works.<br>- [ ] Settings update flow works.<br>- [ ] Defaults are applied when settings are missing. |
-| P2 | P2.4 | Validation Layer | Add input validation and user-safe error feedback. | - [ ] Required fields are validated before save.<br>- [ ] Numeric ranges are validated.<br>- [ ] UI feedback is shown for invalid inputs. |
-| P2 | P2.5 | Persistence QA | Verify reliability of saved data across restarts. | - [ ] Assignment data persists after browser restart.<br>- [ ] Settings persist after browser restart.<br>- [ ] No data corruption in normal edit flows. |
+| P2 | P2.1 | Storage Service | Implement data persistence using chrome.storage.local. | - [x] Storage adapter is implemented.<br>- [x] Read/write/update/delete methods are available.<br>- [x] Error handling is implemented for storage failures. |
+| P2 | P2.2 | Assignment CRUD | Build create, edit, complete, and delete task flows. | - [x] Assignment create flow works.<br>- [x] Assignment edit flow works.<br>- [x] Assignment complete toggle works.<br>- [x] Assignment delete flow works. |
+| P2 | P2.3 | Settings CRUD | Build user settings create and update flow. | - [x] Settings save flow works.<br>- [x] Settings update flow works.<br>- [x] Defaults are applied when settings are missing. |
+| P2 | P2.4 | Validation Layer | Add input validation and user-safe error feedback. | - [x] Required fields are validated before save.<br>- [x] Numeric ranges are validated.<br>- [x] UI feedback is shown for invalid inputs. |
+| P2 | P2.5 | Persistence QA | Verify reliability of saved data across restarts. | - [x] Assignment data persists after browser restart.<br>- [x] Settings persist after browser restart.<br>- [x] No data corruption in normal edit flows. |
 
 ## Phase P3: Scoring Engine
 

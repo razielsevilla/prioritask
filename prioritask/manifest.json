@@ -3,6 +3,7 @@
   "name": "PrioriTask",
   "version": "1.0.0",
   "description": "Prioritize assignments and manage decision fatigue.",
+  "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html"
   },

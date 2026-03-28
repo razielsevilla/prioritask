@@ -19,18 +19,24 @@ const DEFAULT_SETTINGS: UserSettings = {
 export default function Options() {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [saveStatus, setSaveStatus] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    loadSettings();
+    void loadSettings();
   }, []);
 
   const loadSettings = async () => {
-    const storedSettings = await repository.getSettings();
-    if (storedSettings) {
-      setSettings(storedSettings);
-    } else {
-      // Apply defaults if nothing is in chrome.storage
-      setSettings(DEFAULT_SETTINGS);
+    try {
+      const storedSettings = await repository.getSettings();
+      if (storedSettings) {
+        setSettings({ ...DEFAULT_SETTINGS, ...storedSettings });
+      } else {
+        // Apply defaults if nothing is in chrome.storage
+        setSettings(DEFAULT_SETTINGS);
+      }
+      setSaveStatus('');
+    } catch {
+      setSaveStatus('Unable to load settings. Please reload the extension and try again.');
     }
   };
 
@@ -41,12 +47,18 @@ export default function Options() {
       ...settings,
       updatedAt: new Date().toISOString(),
     };
-    
-    await repository.saveSettings(updatedSettings);
-    setSettings(updatedSettings);
-    
-    setSaveStatus('Settings saved successfully!');
-    setTimeout(() => setSaveStatus(''), 3000);
+
+    try {
+      setIsSaving(true);
+      await repository.saveSettings(updatedSettings);
+      setSettings(updatedSettings);
+      setSaveStatus('Settings saved successfully!');
+      setTimeout(() => setSaveStatus(''), 3000);
+    } catch {
+      setSaveStatus('Unable to save settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Generic handler for standard inputs
@@ -133,8 +145,8 @@ export default function Options() {
           </label>
         </fieldset>
 
-        <button type="submit" style={{ padding: '10px', fontSize: '16px', cursor: 'pointer', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '4px' }}>
-          Save Settings
+        <button type="submit" disabled={isSaving} style={{ padding: '10px', fontSize: '16px', cursor: isSaving ? 'not-allowed' : 'pointer', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '4px', opacity: isSaving ? 0.8 : 1 }}>
+          {isSaving ? 'Saving...' : 'Save Settings'}
         </button>
         
         {saveStatus && <p style={{ color: 'green', textAlign: 'center', marginTop: '0' }}>{saveStatus}</p>}
