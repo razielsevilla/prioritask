@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Prioritize assignments and manage decision fatigue.",
   "action": {
-    "default_popup": "index.html"
-  }
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
 }
