@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "PrioriTask",
+  "version": "1.0.0",
+  "description": "Prioritize assignments and manage decision fatigue.",
+  "action": {
+    "default_popup": "index.html"
+  }
+}
