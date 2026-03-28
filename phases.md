@@ -25,11 +25,11 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 
 | Phase ID | Subphase | Title | Description | Definition of Done (Checklist) |
 | --- | --- | --- | --- | --- |
-| P3 | P3.1 | Base Algorithms | Implement DDS, DoD, B2D, and EoC scoring modules. | - [ ] DDS_safe is implemented.<br>- [ ] DoD_safe is implemented.<br>- [ ] B2D_safe is implemented.<br>- [ ] EoC_safe is implemented. |
-| P3 | P3.2 | Risk Overlay | Implement FSR feasibility and risk boost behavior. | - [ ] FSR formula is implemented.<br>- [ ] RiskBoost application is implemented.<br>- [ ] Risk threshold behavior is defined and tested. |
-| P3 | P3.3 | Ranking Pipeline | Implement sorting flow with buckets and tie-breakers. | - [ ] Overdue bucket is handled first.<br>- [ ] Final score sorting is implemented.<br>- [ ] Tie-breakers are deterministic and implemented. |
-| P3 | P3.4 | Explainability Labels | Add reason tags for transparent scoring output. | - [ ] Reason tags are generated for high urgency/impact/risk.<br>- [ ] Tags are displayed in UI-ready format.<br>- [ ] Labels remain consistent for same input data. |
-| P3 | P3.5 | Scoring Tests | Validate formulas and ranking behavior with edge cases. | - [ ] Unit tests cover each formula.<br>- [ ] Edge cases are covered (zero day, overdue, missing values).<br>- [ ] Sample dataset ranking is validated. |
+| P3 | P3.1 | Base Algorithms | Implement DDS, DoD, B2D, and EoC scoring modules. | - [ ] DDS_safe is implemented.<br>- [x] DoD_safe is implemented.<br>- [x] B2D_safe is implemented.<br>- [x] EoC_safe is implemented. |
+| P3 | P3.2 | Risk Overlay | Implement FSR feasibility and risk boost behavior. | - [x] FSR formula is implemented.<br>- [x] RiskBoost application is implemented.<br>- [x] Risk threshold behavior is defined and tested. |
+| P3 | P3.3 | Ranking Pipeline | Implement sorting flow with buckets and tie-breakers. | - [x] Overdue bucket is handled first.<br>- [x] Final score sorting is implemented.<br>- [x] Tie-breakers are deterministic and implemented. |
+| P3 | P3.4 | Explainability Labels | Add reason tags for transparent scoring output. | - [x] Reason tags are generated for high urgency/impact/risk.<br>- [x] Tags are displayed in UI-ready format.<br>- [x] Labels remain consistent for same input data. |
+| P3 | P3.5 | Scoring Tests | Validate formulas and ranking behavior with edge cases. | - [x] Unit tests cover each formula.<br>- [x] Edge cases are covered (zero day, overdue, missing values).<br>- [x] Sample dataset ranking is validated. |
 
 ## Phase P4: Notifications and Automation
 
