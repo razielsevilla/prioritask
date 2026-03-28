@@ -51,4 +51,20 @@ describe('Ranking Pipeline', () => {
     // Alpha should come before Beta alphabetically
     expect(ranked[0].id).toBe('1');
   });
+
+  it('generates consistent explainability tags for UI', () => {
+    // Due in 12 hours (0.5 days). Very little time.
+    const highRiskTask = createMockTask('3', 'Tough Task', 12); 
+    highRiskTask.difficulty = 9; // High difficulty
+    // 5 hours of effort, but capacity is only 2 hours (0.5 days * 4 hours/day) -> FSR > 1.0
+    highRiskTask.effortHours = 5; 
+    
+    const ranked = rankAssignments([highRiskTask], mockSettings);
+    const tags = ranked[0].explanationReasons;
+
+    // Verify it caught all three conditions deterministically
+    expect(tags).toContain('🔥 High Urgency (Due soon)');
+    expect(tags).toContain('⚠️ Critical Risk (Exceeds Capacity)');
+    expect(tags).toContain('🧗 High Difficulty');
+  });
 });
