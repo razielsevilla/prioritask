@@ -55,7 +55,7 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 
 | Phase ID | Subphase | Title | Description | Definition of Done (Checklist) |
 | --- | --- | --- | --- | --- |
-| P6 | P6.1 | Regression QA | Perform full pass to catch functional regressions. | - [ ] Manual regression checklist is executed.<br>- [ ] Critical defects are fixed.<br>- [ ] No release-blocking issues remain. |
+| P6 | P6.1 | Regression QA | Perform full pass to catch functional regressions. | - [x] Manual regression checklist is executed.<br>- [x] Critical defects are fixed.<br>- [x] No release-blocking issues remain. |
 | P6 | P6.2 | Permission and Privacy Review | Finalize security posture and user privacy messaging. | - [ ] Permissions are minimal and justified.<br>- [ ] Privacy statement/copy is finalized.<br>- [ ] No unnecessary data collection is present. |
 | P6 | P6.3 | Store Listing Preparation | Prepare all Chrome Web Store listing assets and content. | - [ ] Store description is complete.<br>- [ ] Screenshots and icons are prepared.<br>- [ ] Category and metadata are finalized. |
 | P6 | P6.4 | Versioning and Packaging | Build and package releasable extension artifact. | - [ ] Version number is updated.<br>- [ ] Production build is generated.<br>- [ ] Upload-ready package is created and validated. |

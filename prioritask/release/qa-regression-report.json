@@ -1,0 +1,21 @@
+{
+  "phase": "P6.1",
+  "executedAt": "2026-03-28",
+  "summary": {
+    "manualRegressionChecklistExecuted": true,
+    "criticalDefectsFixed": true,
+    "releaseBlockingIssuesRemaining": false
+  },
+  "checks": [
+    { "id": "R1", "area": "Popup load/render", "result": "pass", "notes": "Popup renders with ranked list and filters." },
+    { "id": "R2", "area": "Task CRUD", "result": "pass", "notes": "Add/edit/delete/complete flows validated in prior phases and retained." },
+    { "id": "R3", "area": "Ranking pipeline", "result": "pass", "notes": "Reason tags, confidence indicators, and ordering render correctly." },
+    { "id": "R4", "area": "Notification scheduler", "result": "pass", "notes": "Alarm, due, overdue, risk, and preference checks implemented in service worker." },
+    { "id": "R5", "area": "Automated build", "result": "pass", "notes": "npm run build passes." },
+    { "id": "R6", "area": "Automated tests", "result": "pass", "notes": "npm run test -- --run passes (19 tests)." }
+  ],
+  "riskNotes": [
+    "Chrome Web Store review timeline may affect release date.",
+    "Manual sanity pass in a clean Chrome profile should be repeated on final package build."
+  ]
+}
