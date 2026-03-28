@@ -6,7 +6,7 @@ describe('Ranking Pipeline', () => {
   const mockSettings: UserSettings = {
     defaultMode: 'DDS', alpha: 0.5, epsilon: 0.1, gamma: 1.0,
     defaultNeed: 5, uncertaintyDefault: 5, availableHoursPerDay: 4,
-    reminderWindows: [24], notificationEnabled: false,
+    reminderWindows: [24], checkIntervalMinutes: 30, notificationEnabled: false,
     updatedAt: new Date().toISOString(),
   };
 

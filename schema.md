@@ -54,6 +54,7 @@ Validation rules:
   "uncertaintyDefault": "number",
   "availableHoursPerDay": "number",
   "reminderWindows": [48, 24, 6],
+  "checkIntervalMinutes": 30,
   "notificationEnabled": true,
   "updatedAt": "ISO-8601 datetime string"
 }
@@ -66,6 +67,7 @@ Validation rules:
 - defaultNeed in [0, 1]
 - uncertaintyDefault in [0, 1]
 - availableHoursPerDay >= 0
+- checkIntervalMinutes in [1, 180]
 
 ## 3) AppMeta Schema
 

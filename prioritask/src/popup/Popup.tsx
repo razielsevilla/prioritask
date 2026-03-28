@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   uncertaintyDefault: 5,
   availableHoursPerDay: 4,
   reminderWindows: [48, 24, 6],
+  checkIntervalMinutes: 30,
   notificationEnabled: true,
   updatedAt: new Date().toISOString(),
 };

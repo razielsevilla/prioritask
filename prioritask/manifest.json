@@ -3,7 +3,11 @@
   "name": "PrioriTask",
   "version": "1.0.0",
   "description": "Prioritize assignments and manage decision fatigue.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms", "notifications"],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
   "action": {
     "default_popup": "popup.html"
   },

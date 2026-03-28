@@ -12,6 +12,7 @@ describe('Scoring Engine Algorithms', () => {
     uncertaintyDefault: 5,
     availableHoursPerDay: 4,
     reminderWindows: [24],
+    checkIntervalMinutes: 30,
     notificationEnabled: false,
     updatedAt: new Date().toISOString(),
   };
@@ -90,6 +91,7 @@ describe('FSR and Risk Overlay', () => {
     uncertaintyDefault: 5,
     availableHoursPerDay: 4, // 4 hours available per day
     reminderWindows: [24],
+    checkIntervalMinutes: 30,
     notificationEnabled: false,
     updatedAt: new Date().toISOString(),
   };

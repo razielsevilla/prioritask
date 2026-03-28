@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   uncertaintyDefault: 5,
   availableHoursPerDay: 4,
   reminderWindows: [48, 24, 6],
+  checkIntervalMinutes: 30,
   notificationEnabled: true,
   updatedAt: new Date().toISOString(),
 };
@@ -133,7 +134,7 @@ export default function Options() {
             <input type="checkbox" name="notificationEnabled" checked={settings.notificationEnabled} onChange={handleChange} />
             Enable Chrome Notifications
           </label>
-          <label style={{ display: 'block' }}>
+          <label style={{ display: 'block', marginBottom: '12px' }}>
             Reminder Windows (Hours before deadline, comma-separated):<br/>
             <input 
               type="text" 
@@ -141,6 +142,19 @@ export default function Options() {
               onChange={handleRemindersChange} 
               placeholder="e.g. 48, 24, 6"
               style={{ width: '100%', marginTop: '4px' }} 
+            />
+          </label>
+          <label style={{ display: 'block' }}>
+            Periodic Check Interval (minutes):<br/>
+            <input
+              type="number"
+              name="checkIntervalMinutes"
+              value={settings.checkIntervalMinutes}
+              onChange={handleChange}
+              min="1"
+              max="180"
+              step="1"
+              style={{ width: '100%', marginTop: '4px' }}
             />
           </label>
         </fieldset>

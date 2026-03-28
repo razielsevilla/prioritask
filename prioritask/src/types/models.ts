@@ -28,6 +28,7 @@ export interface UserSettings {
   uncertaintyDefault: number;
   availableHoursPerDay: number;
   reminderWindows: number[]; // e.g., [48, 24, 6]
+  checkIntervalMinutes: number;
   notificationEnabled: boolean;
   updatedAt: string; // ISO-8601 datetime string
 }
