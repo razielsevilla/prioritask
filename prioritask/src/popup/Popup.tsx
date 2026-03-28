@@ -168,6 +168,63 @@ export default function Popup() {
       || task.explanationReasons.some((tag) => tag.includes('Critical Risk') || tag.includes('Overdue'));
   };
 
+  const getConfidenceForTask = (task: ComputedAssignment): {
+    label: 'High' | 'Medium' | 'Low';
+    defaultsUsed: string[];
+  } => {
+    const defaultsUsed: string[] = [];
+
+    if (task.mode === 'DoD' && task.difficulty == null) {
+      defaultsUsed.push('difficulty');
+    }
+
+    if (task.mode === 'B2D') {
+      if (task.difficulty == null) {
+        defaultsUsed.push('difficulty');
+      }
+      if (task.benefitPoints == null) {
+        defaultsUsed.push('benefit');
+      }
+    }
+
+    if (task.mode === 'EoC') {
+      if (task.weight == null) {
+        defaultsUsed.push('weight');
+      }
+      if (task.benefitPoints == null) {
+        defaultsUsed.push('benefit');
+      }
+      if (task.currentGrade == null) {
+        defaultsUsed.push('grade need');
+      }
+      if (task.effortHours == null) {
+        defaultsUsed.push('effort');
+      }
+    }
+
+    if (defaultsUsed.length === 0) {
+      return { label: 'High', defaultsUsed };
+    }
+
+    if (defaultsUsed.length <= 1) {
+      return { label: 'Medium', defaultsUsed };
+    }
+
+    return { label: 'Low', defaultsUsed };
+  };
+
+  const getWhyRankedHere = (task: ComputedAssignment): string => {
+    if (task.explanationReasons.length > 0) {
+      return task.explanationReasons.slice(0, 2).join(' + ');
+    }
+
+    if (task.safeDaysLeft <= 1) {
+      return 'Due very soon';
+    }
+
+    return 'Balanced by urgency and effort';
+  };
+
   return (
     <div style={{ padding: '16px', minWidth: '380px', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
@@ -250,6 +307,7 @@ export default function Popup() {
         
         {assignments.map((task, index) => {
           const critical = isCriticalTask(task);
+          const confidence = getConfidenceForTask(task);
 
           return (
           <div key={task.id} style={{ 
@@ -293,6 +351,9 @@ export default function Popup() {
                     </span>
                   ))}
                 </div>
+                <p style={{ fontSize: '11px', color: '#4b5563', marginBottom: '6px' }}>
+                  Why here: {getWhyRankedHere(task)}
+                </p>
               </div>
 
               <div style={{ textAlign: 'right' }}>
@@ -300,6 +361,19 @@ export default function Popup() {
                   {task.finalPriorityScore.toFixed(1)}
                 </div>
                 <div style={{ fontSize: '9px', color: '#999', textTransform: 'uppercase' }}>Priority</div>
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  color: confidence.label === 'High' ? '#065f46' : confidence.label === 'Medium' ? '#92400e' : '#991b1b'
+                }}>
+                  Confidence: {confidence.label}
+                </div>
+                {confidence.defaultsUsed.length > 0 ? (
+                  <div style={{ fontSize: '9px', color: '#6b7280', maxWidth: '120px' }}>
+                    Defaults used: {confidence.defaultsUsed.join(', ')}
+                  </div>
+                ) : null}
               </div>
             </div>
 
