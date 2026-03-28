@@ -228,6 +228,32 @@ export default function Popup() {
     return 'Balanced by urgency and effort';
   };
 
+  const getMissingDataHints = (task: ComputedAssignment): string[] => {
+    const hints: string[] = [];
+
+    if (task.status === 'completed') {
+      return hints;
+    }
+
+    if (task.difficulty == null) {
+      hints.push('Add difficulty for stronger ranking confidence.');
+    }
+
+    if (task.effortHours == null) {
+      hints.push('Add effort hours to improve schedule-risk accuracy.');
+    }
+
+    if ((task.mode === 'B2D' || task.mode === 'EoC') && task.benefitPoints == null) {
+      hints.push('Benefit/impact is using defaults from settings.');
+    }
+
+    if (task.mode === 'EoC' && task.weight == null) {
+      hints.push('Grade weight is using defaults from settings.');
+    }
+
+    return hints;
+  };
+
   const filteredAssignments = useMemo<ComputedAssignment[]>(() => {
     const now = new Date();
     const nowTime = now.getTime();
@@ -365,6 +391,12 @@ export default function Popup() {
           <button type="submit" style={{ flex: 1 }} disabled={isSaving}>{isSaving ? 'Saving...' : (editingId ? 'Update Task' : 'Add Task')}</button>
           {editingId && <button type="button" onClick={resetForm} disabled={isSaving}>Cancel</button>}
         </div>
+
+        {allAssignments.length === 0 ? (
+          <p style={{ fontSize: '11px', color: '#4b5563', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '8px' }}>
+            First task tip: Add a title, due date, and at least difficulty/effort for better prioritization.
+          </p>
+        ) : null}
       </form>
 
       <hr />
@@ -412,10 +444,21 @@ export default function Popup() {
             {activeFilter === 'all' && 'No pending tasks. Relax!'}
           </p>
         ) : null}
+
+        {activeFilter === 'all' && allAssignments.length === 0 ? (
+          <div style={{ border: '1px solid #dbeafe', backgroundColor: '#eff6ff', borderRadius: '8px', padding: '10px', color: '#1e3a8a', fontSize: '12px' }}>
+            <strong>Welcome to PrioriTask.</strong>
+            <p style={{ marginTop: '6px' }}>Get started in under 30 seconds:</p>
+            <p style={{ marginTop: '4px' }}>1) Add a task title</p>
+            <p style={{ marginTop: '2px' }}>2) Set due date/time</p>
+            <p style={{ marginTop: '2px' }}>3) Add difficulty and effort (optional but recommended)</p>
+          </div>
+        ) : null}
         
         {filteredAssignments.map((task, index) => {
           const critical = isCriticalTask(task);
           const confidence = getConfidenceForTask(task);
+          const missingDataHints = getMissingDataHints(task);
 
           return (
           <div key={task.id} style={{ 
@@ -488,6 +531,14 @@ export default function Popup() {
             <p style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#666' }}>
               Due: {new Date(task.dueAt).toLocaleString()}
             </p>
+
+            {missingDataHints.length > 0 ? (
+              <div style={{ marginBottom: '10px', fontSize: '10px', color: '#6b7280', backgroundColor: '#f9fafb', borderRadius: '6px', padding: '6px' }}>
+                {missingDataHints.map((hint) => (
+                  <p key={hint} style={{ marginTop: '2px' }}>Hint: {hint}</p>
+                ))}
+              </div>
+            ) : null}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
