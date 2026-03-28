@@ -1,18 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { repository } from '../storage/repository';
-import type { Assignment, AlgorithmMode } from '../types/models';
+import type { Assignment, AlgorithmMode, UserSettings } from '../types/models';
 import { assignmentSchema } from '../types/validators';
+
+const DEFAULT_SORT_MODE: AlgorithmMode = 'DDS';
+const DEFAULT_SETTINGS: Pick<UserSettings, 'defaultMode' | 'alpha' | 'epsilon' | 'defaultNeed'> = {
+  defaultMode: DEFAULT_SORT_MODE,
+  alpha: 1,
+  epsilon: 0.05,
+  defaultNeed: 0.6,
+};
+
+type RankedAssignment = Assignment & {
+  score: number;
+  rawDaysLeft: number;
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+
+const getRawDaysLeft = (dueAt: string) => Math.ceil((new Date(dueAt).getTime() - Date.now()) / DAY_MS);
 
 export default function Popup() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [sortMode, setSortMode] = useState<AlgorithmMode>(DEFAULT_SORT_MODE);
+  const [algorithmSettings, setAlgorithmSettings] = useState(DEFAULT_SETTINGS);
 
   // Form State
   const [title, setTitle] = useState('');
   const [dueAt, setDueAt] = useState('');
-  const [mode, setMode] = useState<AlgorithmMode>('DDS');
   const [difficulty, setDifficulty] = useState<number | ''>('');
   const [effortHours, setEffortHours] = useState<number | ''>('');
   
@@ -21,7 +41,87 @@ export default function Popup() {
 
   useEffect(() => {
     void loadAssignments();
+    void loadSettings();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const savedSettings = await repository.getSettings();
+      if (!savedSettings) {
+        return;
+      }
+
+      setSortMode(savedSettings.defaultMode ?? DEFAULT_SORT_MODE);
+      setAlgorithmSettings({
+        defaultMode: savedSettings.defaultMode ?? DEFAULT_SORT_MODE,
+        alpha: savedSettings.alpha ?? DEFAULT_SETTINGS.alpha,
+        epsilon: savedSettings.epsilon ?? DEFAULT_SETTINGS.epsilon,
+        defaultNeed: savedSettings.defaultNeed ?? DEFAULT_SETTINGS.defaultNeed,
+      });
+    } catch {
+      setStatusMessage('Unable to load saved sort mode. Using defaults.');
+    }
+  };
+
+  const rankedAssignments = useMemo<RankedAssignment[]>(() => {
+    const scoreFor = (task: Assignment): number => {
+      const rawDaysLeft = getRawDaysLeft(task.dueAt);
+      const d = Math.max(0, rawDaysLeft);
+      const difficultyNorm = clamp((task.difficulty ?? 5) / 10);
+      const benefitNorm = clamp((task.benefitPoints ?? 50) / 100);
+      const weightNorm = clamp((task.weight ?? 50) / 100);
+      const effort = Math.max(task.effortHours ?? 1, 0.5);
+      const gradeNorm = clamp((task.currentGrade ?? 40) / 100);
+      const alpha = Math.max(0.1, algorithmSettings.alpha ?? DEFAULT_SETTINGS.alpha);
+      const epsilon = Math.max(0.0001, algorithmSettings.epsilon ?? DEFAULT_SETTINGS.epsilon);
+      const defaultNeed = clamp(algorithmSettings.defaultNeed ?? DEFAULT_SETTINGS.defaultNeed);
+
+      if (sortMode === 'DDS') {
+        return 1 / (d + 1);
+      }
+
+      if (sortMode === 'DoD') {
+        return difficultyNorm / (d + 1);
+      }
+
+      if (sortMode === 'B2D') {
+        return benefitNorm / ((difficultyNorm + epsilon) * Math.pow(d + 1, alpha));
+      }
+
+      const needFactor = task.currentGrade == null ? defaultNeed : clamp(1 - gradeNorm);
+      return (weightNorm * benefitNorm * needFactor) / ((effort + epsilon) * Math.pow(d + 1, alpha));
+    };
+
+    return assignments
+      .map((task) => ({
+        ...task,
+        score: scoreFor(task),
+        rawDaysLeft: getRawDaysLeft(task.dueAt),
+      }))
+      .sort((a, b) => {
+        if (a.status !== b.status) {
+          return a.status === 'pending' ? -1 : 1;
+        }
+
+        const aOverdue = a.rawDaysLeft < 0;
+        const bOverdue = b.rawDaysLeft < 0;
+        if (aOverdue !== bOverdue) {
+          return aOverdue ? -1 : 1;
+        }
+
+        const scoreDelta = b.score - a.score;
+        if (scoreDelta !== 0) {
+          return scoreDelta;
+        }
+
+        const dueDelta = new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+        if (dueDelta !== 0) {
+          return dueDelta;
+        }
+
+        return (a.effortHours ?? Number.MAX_SAFE_INTEGER) - (b.effortHours ?? Number.MAX_SAFE_INTEGER);
+      });
+  }, [assignments, sortMode, algorithmSettings]);
 
   const loadAssignments = async () => {
     try {
@@ -35,7 +135,6 @@ export default function Popup() {
   const resetForm = () => {
     setTitle('');
     setDueAt('');
-    setMode('DDS');
     setDifficulty('');
     setEffortHours('');
     setEditingId(null);
@@ -50,7 +149,6 @@ export default function Popup() {
     const formData = {
       title: title.trim(),
       dueAt,
-      mode,
       difficulty: difficulty === '' ? null : Number(difficulty),
       effortHours: effortHours === '' ? null : Number(effortHours),
     };
@@ -79,7 +177,7 @@ export default function Popup() {
       title: validationResult.data.title,
       course: null,
       dueAt: new Date(validationResult.data.dueAt).toISOString(),
-      mode: validationResult.data.mode,
+      mode: sortMode,
       difficulty: validationResult.data.difficulty,
       benefitPoints: null, 
       weight: null,
@@ -107,7 +205,6 @@ export default function Popup() {
     setEditingId(assignment.id);
     setTitle(assignment.title);
     setDueAt(new Date(assignment.dueAt).toISOString().slice(0, 16));
-    setMode(assignment.mode);
     setDifficulty(assignment.difficulty ?? '');
     setEffortHours(assignment.effortHours ?? '');
     setErrors({});
@@ -141,7 +238,18 @@ export default function Popup() {
 
   return (
     <div style={{ padding: '16px', minWidth: '350px', fontFamily: 'sans-serif' }}>
-      <h2>PrioriTask</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <h2 style={{ margin: 0 }}>PrioriTask</h2>
+        <label style={{ fontSize: '12px', color: '#444', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          Sort by
+          <select value={sortMode} onChange={(e) => setSortMode(e.target.value as AlgorithmMode)}>
+            <option value="DDS">DDS</option>
+            <option value="DoD">DoD</option>
+            <option value="B2D">B2D</option>
+            <option value="EoC">EoC</option>
+          </select>
+        </label>
+      </div>
       {statusMessage ? <p style={{ marginTop: '0', color: '#444' }}>{statusMessage}</p> : null}
       
       {/* Form Section */}
@@ -165,13 +273,6 @@ export default function Popup() {
           />
           {errors.dueAt && <span style={{ color: 'red', fontSize: '12px' }}>{errors.dueAt}</span>}
         </div>
-
-        <select value={mode} onChange={(e) => setMode(e.target.value as AlgorithmMode)}>
-          <option value="DDS">DDS (Due Date)</option>
-          <option value="DoD">DoD (Difficulty)</option>
-          <option value="B2D">B2D (Benefit/Effort)</option>
-          <option value="EoC">EoC (Effort-over-Complexity)</option>
-        </select>
 
         <div style={{ display: 'flex', gap: '8px' }}>
           <div style={{ width: '50%' }}>
@@ -202,9 +303,9 @@ export default function Popup() {
 
       {/* List Section */}
       <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {assignments.length === 0 ? <p>No tasks yet. Add one above!</p> : null}
+        {rankedAssignments.length === 0 ? <p>No tasks yet. Add one above!</p> : null}
         
-        {assignments.map(task => (
+        {rankedAssignments.map(task => (
           <div key={task.id} style={{ 
             border: '1px solid #ccc', padding: '8px', borderRadius: '4px',
             opacity: task.status === 'completed' ? 0.6 : 1
@@ -220,7 +321,7 @@ export default function Popup() {
               />
             </div>
             <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>
-              Due: {new Date(task.dueAt).toLocaleString()} | Mode: {task.mode}
+              Due: {new Date(task.dueAt).toLocaleString()} | Score: {task.score.toFixed(3)}
             </p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => handleEdit(task)} style={{ fontSize: '12px' }}>Edit</button>

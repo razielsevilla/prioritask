@@ -12,6 +12,5 @@ export const assignmentSchema = z.object({
   effortHours: z.number()
     .min(0.5, "Effort must be at least 0.5 hours.")
     .max(100, "Effort seems unreasonably high.")
-    .nullable(),
-  mode: z.enum(['DDS', 'DoD', 'B2D', 'EoC'])
+    .nullable()
 });
