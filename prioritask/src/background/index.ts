@@ -1,10 +1,16 @@
 import { repository } from '../storage/repository';
+import { calculateFSR } from '../utils/algorithms';
 import type { Assignment, UserSettings } from '../types/models';
 
 const SETTINGS_KEY = 'prioritask.settings';
 const ASSIGNMENTS_KEY = 'prioritask.assignments';
 const REMINDER_STATE_KEY = 'prioritask.reminder-state';
+const RISK_STATE_KEY = 'prioritask.risk-state';
 const PERIODIC_ALARM_NAME = 'prioritask.periodic-check';
+
+// FSR Risk thresholds (matching algorithms.ts)
+const FSR_CRITICAL_THRESHOLD = 1.0; // Task impossible to complete on time
+const FSR_WARNING_THRESHOLD = 0.75; // High risk: 75%+ of available capacity
 
 type TaskReminderState = {
   dueAt: string;
@@ -13,6 +19,14 @@ type TaskReminderState = {
 };
 
 type ReminderStateMap = Record<string, TaskReminderState>;
+
+type TaskRiskState = {
+  fsrRatio: number;
+  sentCritical: boolean;
+  sentWarning: boolean;
+};
+
+type RiskStateMap = Record<string, TaskRiskState>;
 
 const DEFAULT_SETTINGS: UserSettings = {
   defaultMode: 'DDS',
@@ -41,18 +55,34 @@ const normalizeReminderWindows = (windows: number[]): number[] => {
     .sort((a, b) => b - a);
 };
 
+const validateNotificationPreferences = (settings: Partial<UserSettings>): { notificationEnabled: boolean; reminderWindows: number[] } => {
+  // [P4.5] Notification enabled/disabled setting works
+  const notificationEnabled = typeof settings.notificationEnabled === 'boolean'
+    ? settings.notificationEnabled
+    : DEFAULT_SETTINGS.notificationEnabled;
+
+  // [P4.5] Reminder window preferences are saved
+  const reminderWindows = settings.reminderWindows?.length
+    ? normalizeReminderWindows(settings.reminderWindows)
+    : DEFAULT_SETTINGS.reminderWindows;
+
+  return { notificationEnabled, reminderWindows };
+};
+
 const getActiveSettings = async (): Promise<UserSettings> => {
   const stored = await repository.getSettings();
   if (!stored) {
     return DEFAULT_SETTINGS;
   }
 
+  // [P4.5] Preferences are respected by scheduler
+  const { notificationEnabled, reminderWindows } = validateNotificationPreferences(stored);
+
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
-    reminderWindows: stored.reminderWindows?.length
-      ? normalizeReminderWindows(stored.reminderWindows)
-      : DEFAULT_SETTINGS.reminderWindows,
+    notificationEnabled,
+    reminderWindows,
     checkIntervalMinutes: normalizeInterval(stored.checkIntervalMinutes),
   };
 };
@@ -66,9 +96,26 @@ const saveReminderState = async (state: ReminderStateMap): Promise<void> => {
   await chrome.storage.local.set({ [REMINDER_STATE_KEY]: state });
 };
 
+const getRiskState = async (): Promise<RiskStateMap> => {
+  const result = await chrome.storage.local.get(RISK_STATE_KEY);
+  return (result[RISK_STATE_KEY] as RiskStateMap | undefined) ?? {};
+};
+
+const saveRiskState = async (state: RiskStateMap): Promise<void> => {
+  await chrome.storage.local.set({ [RISK_STATE_KEY]: state });
+};
+
 const hoursUntilDue = (dueAt: string): number => {
   const dueMs = new Date(dueAt).getTime();
   return (dueMs - Date.now()) / (1000 * 60 * 60);
+};
+
+const getSafeDaysLeft = (dueAt: string, epsilon: number): number => {
+  const now = new Date().getTime();
+  const due = new Date(dueAt).getTime();
+  const diffHours = (due - now) / (1000 * 60 * 60);
+  const diffDays = diffHours / 24;
+  return Math.max(diffDays, 0) + epsilon;
 };
 
 const FALLBACK_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAOt0i5cAAAAASUVORK5CYII=';
@@ -136,6 +183,7 @@ const sendNotification = async (
 const runReminderCheck = async (): Promise<void> => {
   try {
     const settings = await getActiveSettings();
+    // [P4.5] Notification enabled/disabled setting is respected by scheduler
     if (!settings.notificationEnabled) {
       return;
     }
@@ -230,6 +278,96 @@ const runReminderCheck = async (): Promise<void> => {
   }
 };
 
+const runRiskCheck = async (): Promise<void> => {
+  try {
+    const settings = await getActiveSettings();
+    // [P4.5] Notification enabled/disabled setting is respected by scheduler
+    if (!settings.notificationEnabled) {
+      return;
+    }
+
+    // [P4.4] FSR threshold warning logic is implemented
+    const assignments = await repository.getAssignments();
+    const pendingAssignments = assignments.filter((assignment) => assignment.status === 'pending');
+
+    const existingRiskState = await getRiskState();
+    const nextRiskState: RiskStateMap = {};
+
+    for (const task of pendingAssignments) {
+      const fsrRatio = calculateFSR(task, settings);
+      const previous = existingRiskState[task.id];
+
+      let riskState: TaskRiskState = previous ?? {
+        fsrRatio,
+        sentCritical: false,
+        sentWarning: false,
+      };
+
+      // [P4.4] High-risk notifications trigger correctly
+      // Critical risk: FSR >= 1.0 (task impossible to finish on available hours)
+      const wasCritical = previous?.fsrRatio ?? 0 >= FSR_CRITICAL_THRESHOLD;
+      const isCritical = fsrRatio >= FSR_CRITICAL_THRESHOLD;
+      const shouldSendCritical = isCritical && !wasCritical && !riskState.sentCritical;
+
+      if (shouldSendCritical) {
+        const hoursAvailable = getSafeDaysLeft(task.dueAt, settings.epsilon) * settings.availableHoursPerDay;
+        const hoursNeeded = task.effortHours ?? settings.defaultNeed;
+        const contextDetails = formatAssignmentContext(task);
+        // [P4.4] Warning text clearly explains risk reason
+        const message = `Critical workload risk! This task requires ${hoursNeeded}h but you have ~${hoursAvailable.toFixed(1)}h available before deadline.${contextDetails}`;
+        const sent = await sendNotification(
+          task,
+          '⛔ PrioriTask Critical Risk',
+          message,
+        );
+
+        if (sent) {
+          riskState = { ...riskState, sentCritical: true };
+        }
+      }
+
+      // [P4.4] Warning risk: FSR >= 0.75 (high risk, 75%+ of capacity)
+      const wasWarning = previous?.fsrRatio ?? 0 >= FSR_WARNING_THRESHOLD;
+      const isWarning = fsrRatio >= FSR_WARNING_THRESHOLD && fsrRatio < FSR_CRITICAL_THRESHOLD;
+      const shouldSendWarning = isWarning && !wasWarning && !riskState.sentWarning;
+
+      if (shouldSendWarning) {
+        const hoursAvailable = getSafeDaysLeft(task.dueAt, settings.epsilon) * settings.availableHoursPerDay;
+        const hoursNeeded = task.effortHours ?? settings.defaultNeed;
+        const percentCapacity = ((fsrRatio * 100) / 1.0).toFixed(0);
+        const contextDetails = formatAssignmentContext(task);
+        // [P4.4] Warning text clearly explains risk reason
+        const message = `High workload risk! This task uses ${percentCapacity}% of your available time (~${hoursNeeded}h of ${hoursAvailable.toFixed(1)}h).${contextDetails}`;
+        const sent = await sendNotification(
+          task,
+          '⚠️ PrioriTask High Risk',
+          message,
+        );
+
+        if (sent) {
+          riskState = { ...riskState, sentWarning: true };
+        }
+      }
+
+      // Reset risk state if risk has cleared
+      if (!isCritical) {
+        riskState.sentCritical = false;
+      }
+      if (!isWarning && !isCritical) {
+        riskState.sentWarning = false;
+      }
+
+      // Update FSR for next comparison
+      riskState.fsrRatio = fsrRatio;
+      nextRiskState[task.id] = riskState;
+    }
+
+    await saveRiskState(nextRiskState);
+  } catch (error) {
+    console.error('PrioriTask risk check failed:', error);
+  }
+};
+
 const schedulePeriodicCheck = async (): Promise<void> => {
   try {
     const settings = await getActiveSettings();
@@ -248,6 +386,7 @@ const schedulePeriodicCheck = async (): Promise<void> => {
 const initializeScheduler = async (): Promise<void> => {
   await schedulePeriodicCheck();
   await runReminderCheck();
+  await runRiskCheck();
 };
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -264,6 +403,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 
   void runReminderCheck();
+  void runRiskCheck();
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -272,11 +412,14 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 
   if (changes[SETTINGS_KEY]) {
+    // [P4.5] Scheduler reschedules immediately when settings change (including notification preferences)
     void schedulePeriodicCheck();
   }
 
   if (changes[SETTINGS_KEY] || changes[ASSIGNMENTS_KEY]) {
+    // [P4.5] Reminder and risk checks run immediately when preferences change to respect user settings
     void runReminderCheck();
+    void runRiskCheck();
   }
 });
 

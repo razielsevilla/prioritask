@@ -53,7 +53,8 @@ export default function Options() {
       setIsSaving(true);
       await repository.saveSettings(updatedSettings);
       setSettings(updatedSettings);
-      setSaveStatus('Settings saved successfully!');
+      // [P4.5] Notification preferences are saved and immediately respected
+      setSaveStatus('✓ Settings saved! Preferences take effect immediately.');
       setTimeout(() => setSaveStatus(''), 3000);
     } catch {
       setSaveStatus('Unable to save settings. Please try again.');
@@ -157,6 +158,10 @@ export default function Options() {
               style={{ width: '100%', marginTop: '4px' }}
             />
           </label>
+          {/* [P4.5] Notification preferences are saved and immediately respected by scheduler */}
+          <p style={{ marginTop: '12px', marginBottom: '0', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
+            Your notification preferences are saved and take effect immediately. Toggle notifications off to disable all alerts, or customize reminder windows to control when you receive alerts.
+          </p>
         </fieldset>
 
         <button type="submit" disabled={isSaving} style={{ padding: '10px', fontSize: '16px', cursor: isSaving ? 'not-allowed' : 'pointer', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '4px', opacity: isSaving ? 0.8 : 1 }}>
