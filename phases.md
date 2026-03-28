@@ -35,11 +35,11 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 
 | Phase ID | Subphase | Title | Description | Definition of Done (Checklist) |
 | --- | --- | --- | --- | --- |
-| P4 | P4.1 | Alarm Scheduler | Set up background scheduling for periodic checks. | - [ ] Background alarm job is implemented.<br>- [ ] Schedule intervals are configurable.<br>- [ ] Alarm events trigger expected handlers. |
-| P4 | P4.2 | Due Notifications | Notify users for upcoming due tasks. | - [ ] Reminder windows (e.g., 48h/24h/6h) are supported.<br>- [ ] Upcoming due alerts trigger on time.<br>- [ ] Alert content includes assignment context. |
-| P4 | P4.3 | Overdue Notifications | Notify users when tasks pass due date uncompleted. | - [ ] Overdue detection logic is implemented.<br>- [ ] Overdue alerts trigger once per policy.<br>- [ ] Completed tasks do not trigger overdue alerts. |
-| P4 | P4.4 | Risk Notifications | Notify users when workload feasibility is high risk. | - [ ] FSR threshold warning logic is implemented.<br>- [ ] High-risk notifications trigger correctly.<br>- [ ] Warning text clearly explains risk reason. |
-| P4 | P4.5 | Notification Preferences | Give users control over notification behavior. | - [ ] Notification enabled/disabled setting works.<br>- [ ] Reminder window preferences are saved.<br>- [ ] Preferences are respected by scheduler. |
+| P4 | P4.1 | Alarm Scheduler | Set up background scheduling for periodic checks. | - [x] Background alarm job is implemented.<br>- [x] Schedule intervals are configurable.<br>- [x] Alarm events trigger expected handlers. |
+| P4 | P4.2 | Due Notifications | Notify users for upcoming due tasks. | - [x] Reminder windows (e.g., 48h/24h/6h) are supported.<br>- [x] Upcoming due alerts trigger on time.<br>- [x] Alert content includes assignment context. |
+| P4 | P4.3 | Overdue Notifications | Notify users when tasks pass due date uncompleted. | - [x] Overdue detection logic is implemented.<br>- [x] Overdue alerts trigger once per policy.<br>- [x] Completed tasks do not trigger overdue alerts. |
+| P4 | P4.4 | Risk Notifications | Notify users when workload feasibility is high risk. | - [x] FSR threshold warning logic is implemented.<br>- [x] High-risk notifications trigger correctly.<br>- [x] Warning text clearly explains risk reason. |
+| P4 | P4.5 | Notification Preferences | Give users control over notification behavior. | - [x] Notification enabled/disabled setting works.<br>- [x] Reminder window preferences are saved.<br>- [x] Preferences are respected by scheduler. |
 
 ## Phase P5: UX Refinement
 
