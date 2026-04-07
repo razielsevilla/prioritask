@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { repository } from '../storage/repository';
 import { rankAssignments } from '../utils/pipeline';
 import { evaluateAddPrioritizeFlow } from '../utils/usability';
@@ -39,9 +39,23 @@ export default function Popup() {
   // Validation State
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const loadAssignments = useCallback(async () => {
+    try {
+      const rawData = await repository.getAssignments();
+      const savedSettings = await repository.getSettings();
+      const activeSettings = savedSettings ?? DEFAULT_SETTINGS;
+      setAllAssignments(rawData);
+      setSettings(activeSettings);
+      setMode(activeSettings.defaultMode);
+      setAssignments(rankAssignments(rawData, activeSettings));
+    } catch {
+      setStatusMessage('Unable to load tasks. Please reload the extension and try again.');
+    }
+  }, []);
+
   useEffect(() => {
     void loadAssignments();
-  }, []);
+  }, [loadAssignments]);
 
   const loadAssignments = async () => {
     try {

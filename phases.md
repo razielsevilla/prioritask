@@ -25,7 +25,8 @@ This file is my execution tracker for building PrioriTask from MVP to launch-rea
 
 | Phase ID | Subphase | Title | Description | Definition of Done (Checklist) |
 | --- | --- | --- | --- | --- |
-| P3 | P3.1 | Base Algorithms | Implement DDS, DoD, B2D, and EoC scoring modules. | - [ ] DDS_safe is implemented.<br>- [x] DoD_safe is implemented.<br>- [x] B2D_safe is implemented.<br>- [x] EoC_safe is implemented. |
+| P3 | P3.1 | Base Algorithms | Implement DDS, DoD, B2D, and EoC scoring modules. | - [x] DDS_safe is implemented.<br>- [x] DoD_safe is implemented.<br>- [x] B2D_safe is implemented.<br>- [x] EoC_safe is implemented. |
+| P3 | P3.1 | Base Algorithms | Implement DDS, DoD, B2D, and EoC scoring modules. | - [x] DDS_safe is implemented.<br>- [x] DoD_safe is implemented.<br>- [x] B2D_safe is implemented.<br>- [x] EoC_safe is implemented. |
 | P3 | P3.2 | Risk Overlay | Implement FSR feasibility and risk boost behavior. | - [x] FSR formula is implemented.<br>- [x] RiskBoost application is implemented.<br>- [x] Risk threshold behavior is defined and tested. |
 | P3 | P3.3 | Ranking Pipeline | Implement sorting flow with buckets and tie-breakers. | - [x] Overdue bucket is handled first.<br>- [x] Final score sorting is implemented.<br>- [x] Tie-breakers are deterministic and implemented. |
 | P3 | P3.4 | Explainability Labels | Add reason tags for transparent scoring output. | - [x] Reason tags are generated for high urgency/impact/risk.<br>- [x] Tags are displayed in UI-ready format.<br>- [x] Labels remain consistent for same input data. |
