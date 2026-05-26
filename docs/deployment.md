@@ -1,13 +1,14 @@
 # PrioriTask Deployment Guide
 
-This document explains how I deploy PrioriTask as a Google Chrome extension.
+This document explains how to deploy both the PrioriTask Google Chrome extension and its Web landing page.
 
 ## Deployment Targets
 
-1. Local development deployment (unpacked extension).
-2. Chrome Web Store deployment (published package).
+1. **Extension**: Local development deployment (unpacked extension).
+2. **Extension**: Chrome Web Store deployment (published package).
+3. **Web**: GitHub Pages (public landing page).
 
-## 1) Local Development Deployment
+## 1) Extension: Local Development Deployment
 
 ### Prerequisites
 
@@ -42,7 +43,7 @@ npm run build
 - Click Reload on the extension card.
 - Re-test alarms and notifications after reload.
 
-## 2) Production Deployment (Chrome Web Store)
+## 2) Extension: Production Deployment (Chrome Web Store)
 
 ### Pre-Release Checklist
 
@@ -100,3 +101,25 @@ If a bad release is detected:
 1. Prepare a hotfix build immediately.
 2. Increment version and resubmit.
 3. Communicate issue and expected fix timeline in release notes.
+
+## 3) Web: GitHub Pages Deployment
+
+The public landing page (located in the `web/` directory) is automatically deployed to GitHub Pages via a GitHub Actions workflow whenever changes are pushed to the `main` branch.
+
+### How it Works
+
+1. **Trigger**: Any push to `main` modifying files in `web/` or `.github/workflows/deploy.yml`.
+2. **Build Process**: The action runs `npm ci` and `npm run build` inside the `web` folder.
+3. **Deployment**: The `web/dist` folder is packaged and pushed directly to the `github-pages` environment.
+
+### Prerequisites
+
+- In your GitHub repository settings, navigate to **Settings > Pages**.
+- Under **Build and deployment**, ensure "Source" is set to **GitHub Actions**.
+
+### Manual Deployment
+
+If you need to deploy manually:
+1. Go to the **Actions** tab in your repository.
+2. Select "Deploy Landing Page to GitHub Pages" from the left sidebar.
+3. Click **Run workflow**.
