@@ -1,5 +1,7 @@
 # PrioriTask
 
+[![Download Extension](https://img.shields.io/badge/Download-Extension%20(.zip)-blue?style=for-the-badge&logo=googlechrome)](https://github.com/razielsevilla/prioritask/releases/latest)
+
 PrioriTask is a Google Chrome extension I am building to help students decide what assignment to work on next.
 
 Instead of keeping a static to-do list, PrioriTask ranks school tasks automatically based on selected prioritization logic and deadline pressure.
@@ -33,6 +35,14 @@ Students often have multiple assignments due at different times, with different 
 3. PrioriTask computes safe scores and ranks tasks.
 4. Extension updates priorities as time and data change.
 5. Notifications remind users of important upcoming or risky tasks.
+
+## Installation (Developer Mode)
+
+1. Download the latest `.zip` release from the [Releases page](https://github.com/razielsevilla/prioritask/releases/latest).
+2. Extract the `.zip` file to a folder on your computer.
+3. Open Chrome and navigate to `chrome://extensions/`.
+4. Toggle **Developer mode** on in the top right corner.
+5. Click **Load unpacked** and select the folder you extracted.
 
 ## Project Documents
 

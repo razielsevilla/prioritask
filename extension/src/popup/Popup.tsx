@@ -57,24 +57,7 @@ export default function Popup() {
     void loadAssignments();
   }, [loadAssignments]);
 
-  const loadAssignments = async () => {
-    try {
-      const rawData = await repository.getAssignments();
-      const savedSettings = await repository.getSettings();
-      const activeSettings = savedSettings ?? DEFAULT_SETTINGS;
 
-      setAllAssignments(rawData);
-      setSettings(activeSettings);
-      if (!settings) {
-        setMode(activeSettings.defaultMode);
-      }
-
-      const ranked = rankAssignments(rawData, activeSettings);
-      setAssignments(ranked);
-    } catch {
-      setStatusMessage('Unable to load tasks or settings. Please reload the extension and try again.');
-    }
-  };
 
   const resetForm = () => {
     setTitle('');

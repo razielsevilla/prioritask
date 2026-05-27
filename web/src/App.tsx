@@ -27,12 +27,23 @@ function App() {
             PrioriTask is the intelligent Chrome extension that automatically ranks your school assignments based on urgency, difficulty, and grade impact. Focus on what matters, exactly when it matters.
           </p>
           <div className="hero-actions">
-            <a href="#" className="btn btn-primary">
-              Add to Chrome — It's Free
+            <a href="https://github.com/razielsevilla/prioritask/releases/latest" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              Download Extension (.zip)
             </a>
-            <a href="#how-it-works" className="btn btn-secondary">
-              See How It Works
+            <a href="https://github.com/razielsevilla/prioritask" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+              View Source on GitHub
             </a>
+          </div>
+          
+          <div className="install-instructions glass-panel" style={{ marginTop: '3rem', textAlign: 'left', padding: '1.5rem', maxWidth: '600px', margin: '3rem auto 0' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.2rem' }}>How to Install (Developer Mode)</h3>
+            <ol style={{ paddingLeft: '1.5rem', margin: 0, lineHeight: '1.6' }}>
+              <li>Download the <strong>.zip</strong> file from the latest release.</li>
+              <li>Extract the downloaded <code>.zip</code> file to a folder.</li>
+              <li>Open Chrome and navigate to <code>chrome://extensions/</code>.</li>
+              <li>Enable <strong>Developer mode</strong> (toggle in the top right corner).</li>
+              <li>Click <strong>Load unpacked</strong> and select the extracted folder.</li>
+            </ol>
           </div>
         </section>
 
