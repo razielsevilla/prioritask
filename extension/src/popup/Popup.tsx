@@ -29,6 +29,26 @@ export default function Popup() {
   const [mode, setMode] = useState<AlgorithmMode>('DDS');
   const [activeFilter, setActiveFilter] = useState<'all' | 'today' | 'week' | 'overdue' | 'completed'>('all');
   const [flowStartAt, setFlowStartAt] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
+
+  // UI Persistence
+  useEffect(() => {
+    chrome.storage.local.get(['prioritask_activeTab', 'prioritask_activeFilter'], (res) => {
+      if (res.prioritask_activeTab) {
+        setActiveTab(res.prioritask_activeTab as 'list' | 'add');
+      }
+      if (res.prioritask_activeFilter) {
+        setActiveFilter(res.prioritask_activeFilter as 'all' | 'today' | 'week' | 'overdue' | 'completed');
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    chrome.storage.local.set({ 
+      prioritask_activeTab: activeTab, 
+      prioritask_activeFilter: activeFilter 
+    });
+  }, [activeTab, activeFilter]);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -119,6 +139,7 @@ export default function Popup() {
         ? evaluateAddPrioritizeFlow(Date.now() - flowStartAt)
         : null;
       resetForm();
+      setActiveTab('list');
       setStatusMessage(
         editingId
           ? 'Task updated.'
@@ -143,6 +164,7 @@ export default function Popup() {
     setErrors({});
     setStatusMessage('');
     setFlowStartAt(null);
+    setActiveTab('add');
   };
 
   const handleToggleComplete = async (assignment: Assignment) => {
@@ -275,10 +297,60 @@ export default function Popup() {
           {statusMessage}
         </div>
       )}
+
+      {/* GAMIFICATION PET */}
+      {(() => {
+        const pending = assignments.filter(t => t.status !== 'completed');
+        const hasOverdue = pending.some(t => new Date(t.dueAt).getTime() < Date.now());
+        // In pipeline, riskScore is finalPriorityScore - baseScore. If it's > 0, risk boost was applied.
+        const hasCritical = pending.some(t => t.riskScore > 0);
+        
+        let petStatus = '💅';
+        let petMessage = 'All good, bestie!';
+        let bg = '#FDF4FF';
+        
+        if (hasOverdue) {
+          petStatus = '😵';
+          petMessage = 'Tasks are overdue!!';
+          bg = '#ffcccc';
+        } else if (hasCritical) {
+          petStatus = '😨';
+          petMessage = 'Critical workload!';
+          bg = '#ffe5b4';
+        } else if (pending.length > 0) {
+          petStatus = '💻';
+          petMessage = 'Time to grind!';
+        }
+
+        return (
+          <div className="retro-inset" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', background: bg, padding: '8px' }}>
+            <div style={{ fontSize: '32px', filter: 'drop-shadow(2px 2px 0px rgba(0,0,0,0.2))' }}>{petStatus}</div>
+            <div style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', color: 'black', fontWeight: 'bold' }}>
+              <div>{petMessage}</div>
+            </div>
+          </div>
+        );
+      })()}
       
-      {/* FORM WINDOW */}
-      <div className="retro-window">
-        <div className="retro-titlebar">
+      {/* TABS */}
+      <div className="retro-tabs">
+        <button 
+          className={`retro-tab ${activeTab === 'list' ? 'active' : ''}`}
+          onClick={() => setActiveTab('list')}
+        >
+          📋 Task List
+        </button>
+        <button 
+          className={`retro-tab ${activeTab === 'add' ? 'active' : ''}`}
+          onClick={() => setActiveTab('add')}
+        >
+          ➕ {editingId ? 'Edit Task' : 'Add Task'}
+        </button>
+      </div>
+      
+      {activeTab === 'add' && (
+        <div className="retro-window">
+          <div className="retro-titlebar">
           <span>{editingId ? 'edit_task.bat' : 'add_task.bat'}</span>
         </div>
         <form onSubmit={handleSave} style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -332,8 +404,11 @@ export default function Popup() {
           </div>
         </form>
       </div>
+      )}
 
-      {/* FILTER BAR */}
+      {activeTab === 'list' && (
+        <>
+          {/* FILTER BAR */}
       <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
         {[
           { key: 'all', label: `All (${assignments.length})` },
@@ -357,6 +432,27 @@ export default function Popup() {
 
       {/* TASK LIST */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        
+        {/* DO THIS FIRST BANNER */}
+        {filteredAssignments.length > 0 && activeFilter !== 'completed' && (
+          <div className="retro-window" style={{ borderColor: 'var(--accent-secondary)', backgroundColor: '#E0FFFF' }}>
+            <div className="retro-titlebar" style={{ background: 'var(--accent-secondary)', color: 'black', borderBottomColor: 'black' }}>
+              <span>🌟 UP NEXT 🌟</span>
+            </div>
+            <div style={{ padding: '12px', textAlign: 'center' }}>
+              <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', margin: '0 0 8px 0', color: 'black' }}>
+                Your top priority is:
+              </p>
+              <h3 style={{ fontFamily: 'var(--font-pixel)', fontSize: '14px', color: 'var(--accent-primary)', textShadow: '1px 1px 0px white', margin: '0 0 8px 0', lineHeight: '1.4' }}>
+                {filteredAssignments[0].title}
+              </h3>
+              <div className="retro-inset" style={{ display: 'inline-block', backgroundColor: 'white', padding: '4px 8px', fontFamily: 'var(--font-vt323)', fontSize: '14px' }}>
+                Priority Score: <strong>{filteredAssignments[0].finalPriorityScore.toFixed(1)}</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
         {filteredAssignments.length === 0 ? (
           <div className="retro-inset" style={{ textAlign: 'center', padding: '24px 0' }}>
             <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px' }}>
@@ -420,6 +516,8 @@ export default function Popup() {
           </div>
         );})}
       </div>
+        </>
+      )}
     </div>
   );
 }

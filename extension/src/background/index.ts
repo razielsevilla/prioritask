@@ -368,6 +368,36 @@ const runRiskCheck = async (): Promise<void> => {
   }
 };
 
+const updateBadge = async (): Promise<void> => {
+  try {
+    const assignments = await repository.getAssignments();
+    const pendingAssignments = assignments.filter((assignment) => assignment.status === 'pending');
+    
+    const settings = await getActiveSettings();
+    const now = Date.now();
+    let badTasksCount = 0;
+    
+    for (const task of pendingAssignments) {
+      const isOverdue = new Date(task.dueAt).getTime() < now;
+      const fsrRatio = calculateFSR(task, settings);
+      const isCritical = fsrRatio >= FSR_CRITICAL_THRESHOLD;
+      
+      if (isOverdue || isCritical) {
+        badTasksCount++;
+      }
+    }
+    
+    if (badTasksCount > 0) {
+      await chrome.action.setBadgeText({ text: badTasksCount.toString() });
+      await chrome.action.setBadgeBackgroundColor({ color: '#FF007F' }); // Candypop Pink
+    } else {
+      await chrome.action.setBadgeText({ text: '' });
+    }
+  } catch (error) {
+    console.error('PrioriTask updateBadge failed:', error);
+  }
+};
+
 const schedulePeriodicCheck = async (): Promise<void> => {
   try {
     const settings = await getActiveSettings();
@@ -387,6 +417,7 @@ const initializeScheduler = async (): Promise<void> => {
   await schedulePeriodicCheck();
   await runReminderCheck();
   await runRiskCheck();
+  await updateBadge();
 };
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -404,6 +435,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
   void runReminderCheck();
   void runRiskCheck();
+  void updateBadge();
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -420,6 +452,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     // [P4.5] Reminder and risk checks run immediately when preferences change to respect user settings
     void runReminderCheck();
     void runRiskCheck();
+    void updateBadge();
   }
 });
 

@@ -230,3 +230,36 @@ input:focus, select:focus {
   border-right-color: var(--border-dark);
   border-bottom-color: var(--border-dark);
 }
+
+.retro-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--border-dark);
+  padding-bottom: 0;
+}
+
+.retro-tab {
+  padding: 6px 12px;
+  background-color: #d4d4d8;
+  border: 2px solid;
+  border-top-color: var(--border-light);
+  border-left-color: var(--border-light);
+  border-right-color: var(--border-dark);
+  border-bottom: none;
+  font-family: var(--font-vt323);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  margin-bottom: -2px; /* Overlap bottom border */
+  position: relative;
+  z-index: 1;
+}
+
+.retro-tab.active {
+  background-color: var(--surface);
+  border-bottom: 2px solid var(--surface); /* Mask the dark line */
+  z-index: 3;
+  font-weight: bold;
+  color: var(--accent-primary);
+}
