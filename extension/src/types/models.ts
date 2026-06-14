@@ -11,6 +11,9 @@ export interface Assignment {
   dueAt: string; // ISO-8601 datetime string
   tShirtSize: TShirtSize;
   
+  parentId?: string | null;
+  subtaskIds?: string[];
+  
   // Legacy fields (kept for backward compatibility)
   mode?: string;
   difficulty?: number | null;
@@ -31,6 +34,7 @@ export interface UserSettings {
   reminderWindows: number[]; // e.g., [48, 24, 6]
   checkIntervalMinutes: number;
   notificationEnabled: boolean;
+  geminiApiKey?: string;
   updatedAt: string; // ISO-8601 datetime string
 }
 

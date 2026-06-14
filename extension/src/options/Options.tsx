@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   reminderWindows: [48, 24, 6],
   checkIntervalMinutes: 30,
   notificationEnabled: true,
+  geminiApiKey: '',
   updatedAt: new Date().toISOString(),
 };
 
@@ -73,68 +74,80 @@ export default function Options() {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto', fontFamily: 'var(--font-bubbly)', backgroundColor: 'var(--bg-color)' }}>
+    <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
       
-      <div className="retro-window" style={{ marginBottom: '24px' }}>
+      <div className="glass-panel" style={{ marginBottom: '24px' }}>
         <div className="retro-titlebar" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>⚙️ options.exe</span>
+          <span>⚙️ OPTIONS_PANEL.exe</span>
           <div className="title-btns">
             <div className="title-btn" style={{ visibility: 'hidden' }}></div>
             <div className="title-btn" style={{ visibility: 'hidden' }}></div>
-            <div className="title-btn">X</div>
+            <div className="title-btn"></div>
           </div>
         </div>
 
-        <div style={{ padding: '16px' }}>
-          <h2 style={{ fontFamily: 'var(--font-pixel)', fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '8px', textShadow: '1px 1px 0px white' }}>PrioriTask Control Panel</h2>
-          <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', marginBottom: '16px' }}>Configure your scoring engine and default preferences here.</p>
+        <div style={{ padding: '24px' }}>
+          <h2 style={{ fontSize: '24px', color: 'var(--accent-primary)', marginBottom: '8px', textShadow: '0 0 10px var(--accent-glow)' }}>PRIORITASK CONTROL PANEL</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '16px', marginBottom: '24px' }}>Configure your scoring engine and default preferences here.</p>
 
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
             {/* General Settings */}
-            <div className="retro-inset" style={{ padding: '12px' }}>
-              <div className="retro-titlebar" style={{ background: 'var(--accent-secondary)', color: 'black', borderBottom: 'none', marginBottom: '8px', padding: '4px' }}>
-                <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px' }}>[ General Preferences ]</span>
+            <div className="retro-inset">
+              <div className="retro-titlebar" style={{ background: 'transparent', borderBottom: '1px solid var(--border-light)', marginBottom: '16px', padding: '0 0 8px 0', color: 'var(--accent-secondary)' }}>
+                <span>[ General Preferences ]</span>
               </div>
-              <label style={{ display: 'block', marginBottom: '12px', fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '16px', color: 'var(--text-primary)' }}>
                 Default T-Shirt Size (Estimated Effort):<br/>
-                <select className="retro-inset" name="defaultTShirtSize" value={settings.defaultTShirtSize} onChange={handleChange} style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }}>
+                <select name="defaultTShirtSize" value={settings.defaultTShirtSize} onChange={handleChange} style={{ width: '100%', marginTop: '8px' }}>
                   <option value="S">Small (~1 Hour)</option>
                   <option value="M">Medium (~3 Hours)</option>
                   <option value="L">Large (~8 Hours)</option>
                 </select>
               </label>
-              <label style={{ display: 'block', fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
+              <label style={{ display: 'block' }}>
                 Available Work Hours Per Day:<br/>
-                <input className="retro-inset" type="number" name="availableHoursPerDay" value={settings.availableHoursPerDay} onChange={handleChange} min="1" max="24" style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }} />
+                <input type="number" name="availableHoursPerDay" value={settings.availableHoursPerDay} onChange={handleChange} min="1" max="24" style={{ width: '100%', marginTop: '8px' }} />
               </label>
             </div>
 
             {/* Notifications */}
-            <div className="retro-inset" style={{ padding: '12px' }}>
-              <div className="retro-titlebar" style={{ background: '#98FB98', color: 'black', borderBottom: 'none', marginBottom: '8px', padding: '4px' }}>
-                <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px' }}>[ Background Alarms ]</span>
+            <div className="retro-inset">
+              <div className="retro-titlebar" style={{ background: 'transparent', borderBottom: '1px solid var(--border-light)', marginBottom: '16px', padding: '0 0 8px 0', color: 'var(--success)' }}>
+                <span>[ Background Alarms ]</span>
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontFamily: 'var(--font-vt323)', fontSize: '18px', fontWeight: 'bold' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontWeight: 'bold' }}>
                 <input type="checkbox" name="notificationEnabled" checked={settings.notificationEnabled} onChange={handleChange} style={{ width: '16px', height: '16px' }} />
                 Enable Chrome Notifications
               </label>
-              <label style={{ display: 'block', marginBottom: '12px', fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '16px' }}>
                 Reminder Windows (Hours before deadline, comma-separated):<br/>
-                <input className="retro-inset" type="text" value={settings.reminderWindows.join(', ')} onChange={handleRemindersChange} placeholder="e.g. 48, 24, 6" style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }} />
+                <input type="text" value={settings.reminderWindows.join(', ')} onChange={handleRemindersChange} placeholder="e.g. 48, 24, 6" style={{ width: '100%', marginTop: '8px' }} />
               </label>
-              <label style={{ display: 'block', fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
+              <label style={{ display: 'block' }}>
                 Periodic Check Interval (minutes):<br/>
-                <input className="retro-inset" type="number" name="checkIntervalMinutes" value={settings.checkIntervalMinutes} onChange={handleChange} min="1" max="180" step="1" style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }} />
+                <input type="number" name="checkIntervalMinutes" value={settings.checkIntervalMinutes} onChange={handleChange} min="1" max="180" step="1" style={{ width: '100%', marginTop: '8px' }} />
               </label>
             </div>
 
-            <button type="submit" className="retro-btn primary" disabled={isSaving} style={{ padding: '12px', fontSize: '18px', width: '100%' }}>
-              {isSaving ? 'Saving...' : 'SAVE SETTINGS.EXE'}
+            {/* AI Settings */}
+            <div className="retro-inset">
+              <div className="retro-titlebar" style={{ background: 'transparent', borderBottom: '1px solid var(--border-light)', marginBottom: '16px', padding: '0 0 8px 0', color: 'var(--accent-primary)' }}>
+                <span>[ AI Breakdown Engine ]</span>
+              </div>
+              <label style={{ display: 'block', marginBottom: '8px' }}>
+                Gemini API Key (Optional):<br/>
+                <input type="password" name="geminiApiKey" value={settings.geminiApiKey || ''} onChange={handleChange} placeholder="Leave blank to use hardcoded trial key" style={{ width: '100%', marginTop: '8px' }} />
+              </label>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Used to automatically break down Large and Medium tasks into smaller sub-tasks.</p>
+            </div>
+
+            <button type="submit" className="retro-btn primary" disabled={isSaving} style={{ padding: '16px', width: '100%' }}>
+              {isSaving ? 'SAVING...' : 'SAVE SETTINGS'}
             </button>
             
             {saveStatus && (
-              <div className="retro-inset" style={{ background: 'var(--accent-secondary)', textAlign: 'center', padding: '8px', fontFamily: 'var(--font-vt323)', fontSize: '18px', color: 'black' }}>
+              <div className="retro-inset" style={{ border: '1px solid var(--success)', color: 'var(--success)', textAlign: 'center', padding: '12px', fontSize: '16px' }}>
                 {saveStatus}
               </div>
             )}

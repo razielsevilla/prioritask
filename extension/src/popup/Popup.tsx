@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { repository } from '../storage/repository';
 import { rankAssignments } from '../utils/pipeline';
 import { evaluateAddPrioritizeFlow } from '../utils/usability';
+import { breakdownTaskWithGemini } from '../utils/ai';
 import type { Assignment, TShirtSize, ComputedAssignment, UserSettings } from '../types/models';
 import { assignmentSchema } from '../types/validators';
 
@@ -25,6 +26,7 @@ export default function Popup() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'today' | 'week' | 'overdue' | 'completed'>('all');
   const [flowStartAt, setFlowStartAt] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
+  const [breakingDownId, setBreakingDownId] = useState<string | null>(null);
 
   // UI Persistence
   useEffect(() => {
@@ -151,16 +153,74 @@ export default function Popup() {
   };
 
   const handleToggleComplete = async (assignment: Assignment) => {
+    const newStatus = assignment.status === 'pending' ? 'completed' : 'pending';
     const updated = {
       ...assignment,
-      status: (assignment.status === 'pending' ? 'completed' : 'pending') as 'pending' | 'completed',
+      status: newStatus as 'pending' | 'completed',
       updatedAt: new Date().toISOString()
     };
     try {
       await repository.saveAssignment(updated);
+
+      if (updated.parentId) {
+        const all = await repository.getAssignments();
+        const parent = all.find(a => a.id === updated.parentId);
+        if (parent && parent.subtaskIds) {
+          if (newStatus === 'completed') {
+            const siblings = all.filter(a => parent.subtaskIds?.includes(a.id));
+            const allDone = siblings.every(s => s.id === updated.id ? true : s.status === 'completed');
+            if (allDone && parent.status !== 'completed') {
+              await repository.saveAssignment({ ...parent, status: 'completed', updatedAt: new Date().toISOString() });
+            }
+          } else if (newStatus === 'pending' && parent.status === 'completed') {
+            await repository.saveAssignment({ ...parent, status: 'pending', updatedAt: new Date().toISOString() });
+          }
+        }
+      }
+
       await loadAssignments();
     } catch {
       setStatusMessage('Error updating status.');
+    }
+  };
+
+  const handleBreakdown = async (task: Assignment) => {
+    try {
+      setBreakingDownId(task.id);
+      setStatusMessage('AI is breaking down task...');
+      const subTasksGenerated = await breakdownTaskWithGemini(task, settings?.geminiApiKey);
+      
+      const subtaskIds: string[] = [];
+      for (const st of subTasksGenerated) {
+        const id = crypto.randomUUID();
+        subtaskIds.push(id);
+        const newSt: Assignment = {
+          id,
+          title: st.title,
+          dueAt: st.dueAt,
+          tShirtSize: st.tShirtSize,
+          status: 'pending',
+          course: task.course,
+          parentId: task.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await repository.saveAssignment(newSt);
+      }
+      
+      const updatedParent: Assignment = {
+        ...task,
+        subtaskIds: [...(task.subtaskIds || []), ...subtaskIds],
+        updatedAt: new Date().toISOString(),
+      };
+      await repository.saveAssignment(updatedParent);
+      await loadAssignments();
+      setStatusMessage('Task broken down successfully! ✨');
+    } catch (err: any) {
+      setStatusMessage(err.message || 'Failed to breakdown task.');
+      console.error(err);
+    } finally {
+      setBreakingDownId(null);
     }
   };
 
@@ -475,6 +535,9 @@ export default function Popup() {
         
         {filteredAssignments.map((task, index) => {
           const critical = isCriticalTask(task);
+          const isParent = task.subtaskIds && task.subtaskIds.length > 0;
+          const isSubtask = !!task.parentId;
+          const canBreakdown = !isParent && !isSubtask && (task.tShirtSize === 'M' || task.tShirtSize === 'L') && task.status !== 'completed';
           
           const previousTask = index > 0 ? filteredAssignments[index - 1] : null;
           const showBucketBanner = activeFilter === 'all' && (!previousTask || previousTask.bucket !== task.bucket);
@@ -492,10 +555,15 @@ export default function Popup() {
                   === [ {task.bucket} ] ===
                 </div>
               )}
-            <div className="glass-panel">
+            <div className="glass-panel" style={{ opacity: isSubtask ? 0.9 : 1, transform: isSubtask ? 'scale(0.98)' : 'none', marginLeft: isSubtask ? '12px' : '0' }}>
             <div className={`retro-titlebar ${critical ? 'critical' : ''}`}>
               <span>#{index + 1} {task.title.substring(0,20)}{task.title.length > 20 ? '...' : ''}</span>
               <div className="title-btns">
+                {canBreakdown && (
+                  <button className="title-btn" style={{ width: 'auto', padding: '0 4px', fontSize: '10px' }} onClick={() => handleBreakdown(task)} disabled={breakingDownId !== null}>
+                    {breakingDownId === task.id ? '...' : '✨'}
+                  </button>
+                )}
                 <button className="title-btn" onClick={() => handleEdit(task)}>E</button>
                 <button className="title-btn" onClick={() => handleDelete(task.id)}>X</button>
               </div>
@@ -526,14 +594,18 @@ export default function Popup() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', fontFamily: 'var(--font-vt323)' }}>
-                  <input
-                    type="checkbox"
-                    checked={task.status === 'completed'}
-                    onChange={() => handleToggleComplete(task)}
-                    style={{ width: '16px', height: '16px' }}
-                  /> DONE
-                </label>
+                {isParent ? (
+                  <span style={{ fontSize: '12px', color: 'var(--accent-secondary)', textTransform: 'uppercase' }}>[ Parent Task - Complete Subtasks ]</span>
+                ) : (
+                  <label style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', fontFamily: 'var(--font-vt323)' }}>
+                    <input
+                      type="checkbox"
+                      checked={task.status === 'completed'}
+                      onChange={() => handleToggleComplete(task)}
+                      style={{ width: '16px', height: '16px' }}
+                    /> DONE
+                  </label>
+                )}
               </div>
             </div>
           </div>
