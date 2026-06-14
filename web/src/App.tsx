@@ -35,6 +35,7 @@ function App() {
           <p className="retro-inset">
             PrioriTask is the intelligent Chrome extension that automatically organizes your assignments into actionable <strong>Now, Next, and Later</strong> buckets based on their time pressure. Focus on what matters, exactly when it matters. ✨
           </p>
+          <div className="hero-actions">
             <button onClick={() => alert('Please install the Chrome Extension and click "🚀 Full Dashboard" in the popup to open the Immersive Dashboard.')} className="btn btn-primary blink">
               ▶ Launch Web Dashboard
             </button>
@@ -43,7 +44,7 @@ function App() {
             </a>
           </div>
           
-          <div className="glass-panel" style={{ marginTop: '4rem', textAlign: 'left', maxWidth: '600px', margin: '4rem auto 0', position: 'relative', zIndex: 10 }}>
+          <div className="retro-window" style={{ marginTop: '4rem', textAlign: 'left', maxWidth: '600px', margin: '4rem auto 0', position: 'relative', zIndex: 10 }}>
             <div className="retro-titlebar">
               <span>install_guide.txt</span>
               <div className="title-btns">
@@ -72,7 +73,7 @@ function App() {
           </div>
           
           <div className="features-grid">
-            <div className="glass-panel feature-card">
+            <div className="retro-window feature-card">
               <div className="retro-titlebar">
                 <span>time_buckets.exe</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
@@ -84,7 +85,7 @@ function App() {
               </div>
             </div>
             
-            <div className="glass-panel feature-card">
+            <div className="retro-window feature-card">
               <div className="retro-titlebar">
                 <span>tshirt_sizing.vbx</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
@@ -96,7 +97,7 @@ function App() {
               </div>
             </div>
             
-            <div className="glass-panel feature-card">
+            <div className="retro-window feature-card">
               <div className="retro-titlebar">
                 <span>risk_alert.dll</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
@@ -111,7 +112,7 @@ function App() {
         </section>
 
         <section className="algo-section container">
-          <div className="glass-panel">
+          <div className="retro-window">
             <div className="retro-titlebar">
               <span>pipeline.exe</span>
               <div className="title-btns">

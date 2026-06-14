@@ -127,7 +127,7 @@ export default function Dashboard() {
     const canBreakdown = !isParent && !isSubtask && (task.tShirtSize === 'M' || task.tShirtSize === 'L') && task.status !== 'completed';
 
     return (
-      <div key={task.id} className="glass-panel" style={{ marginBottom: '16px', opacity: isSubtask ? 0.9 : 1, transform: isSubtask ? 'scale(0.98)' : 'none', marginLeft: isSubtask ? '12px' : '0' }}>
+      <div key={task.id} className="retro-window" style={{ marginBottom: '16px', opacity: isSubtask ? 0.9 : 1, transform: isSubtask ? 'scale(0.98)' : 'none', marginLeft: isSubtask ? '12px' : '0' }}>
         <div className={`retro-titlebar ${critical ? 'critical' : ''}`}>
           <span>#{index + 1} {task.title.substring(0,30)}{task.title.length > 30 ? '...' : ''}</span>
           <div className="title-btns">
@@ -185,7 +185,7 @@ export default function Dashboard() {
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'var(--font-pixel)' }}>
       {/* HEADER */}
-      <div className="glass-panel" style={{ marginBottom: '32px' }}>
+      <div className="retro-window" style={{ marginBottom: '32px' }}>
         <div className="retro-titlebar">
           <span>PRIORITASK_OS.exe - IMMERSIVE DASHBOARD</span>
           <div className="title-btns">
@@ -193,7 +193,7 @@ export default function Dashboard() {
           </div>
         </div>
         <div style={{ padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '16px' }}>
-          <h1 style={{ fontSize: '32px', margin: 0, color: 'var(--accent-primary)', textShadow: '0 0 20px var(--accent-glow)', letterSpacing: '4px' }}>✦ PRIORITASK DASHBOARD ✦</h1>
+          <h1 style={{ fontSize: '32px', margin: 0, color: 'var(--accent-primary)', letterSpacing: '4px' }}>✦ PRIORITASK DASHBOARD ✦</h1>
           <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '20px', margin: 0, color: 'var(--text-secondary)' }}>Master your pipeline. Defeat decision fatigue.</p>
         </div>
       </div>
@@ -209,7 +209,7 @@ export default function Dashboard() {
         
         {/* NOW COLUMN */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="glass-panel" style={{ border: '1px solid var(--accent-primary)' }}>
+          <div className="retro-window" style={{ border: '1px solid var(--accent-primary)' }}>
             <div className="retro-titlebar" style={{ background: 'var(--accent-primary)', color: 'white', borderBottomColor: 'var(--accent-primary)', justifyContent: 'center' }}>
               <span style={{ fontSize: '18px' }}>[ NOW ]</span>
             </div>
@@ -223,7 +223,7 @@ export default function Dashboard() {
 
         {/* NEXT COLUMN */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="glass-panel" style={{ border: '1px solid orange' }}>
+          <div className="retro-window" style={{ border: '1px solid orange' }}>
             <div className="retro-titlebar" style={{ background: 'orange', color: 'black', borderBottomColor: 'orange', justifyContent: 'center' }}>
               <span style={{ fontSize: '18px' }}>[ NEXT ]</span>
             </div>
@@ -237,7 +237,7 @@ export default function Dashboard() {
 
         {/* LATER COLUMN */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="glass-panel" style={{ border: '1px solid var(--success)' }}>
+          <div className="retro-window" style={{ border: '1px solid var(--success)' }}>
             <div className="retro-titlebar" style={{ background: 'var(--success)', color: 'black', borderBottomColor: 'var(--success)', justifyContent: 'center' }}>
               <span style={{ fontSize: '18px' }}>[ LATER ]</span>
             </div>

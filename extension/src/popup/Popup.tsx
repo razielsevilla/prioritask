@@ -312,7 +312,7 @@ export default function Popup() {
     <div style={{ padding: '16px' }}>
       
       {/* HEADER */}
-      <div className="glass-panel" style={{ marginBottom: '16px' }}>
+      <div className="retro-window" style={{ marginBottom: '16px' }}>
         <div className="retro-titlebar">
           <span>PRIORITASK_OS.exe</span>
           <div className="title-btns">
@@ -322,7 +322,7 @@ export default function Popup() {
           </div>
         </div>
         <div style={{ padding: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '18px', color: 'var(--accent-primary)', textShadow: '0 0 10px var(--accent-glow)' }}>✦ PrioriTask ✦</h2>
+          <h2 style={{ fontSize: '18px', color: 'var(--accent-primary)' }}>✦ PrioriTask ✦</h2>
         </div>
       </div>
       
@@ -359,8 +359,8 @@ export default function Popup() {
         }
 
         return (
-          <div className={`glass-panel ${glitchClass}`} style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', padding: '12px', borderLeft: `4px solid ${glowBorder}` }}>
-            <div style={{ fontSize: '42px', filter: `drop-shadow(0 0 10px ${glowBorder})` }}>{petStatus}</div>
+          <div className={`retro-window ${glitchClass}`} style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', padding: '12px', borderLeft: `4px solid ${glowBorder}` }}>
+            <div style={{ fontSize: '42px' }}>{petStatus}</div>
             <div style={{ fontFamily: 'var(--font-vt323)', fontSize: '16px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
               <div>{petMessage}</div>
             </div>
@@ -510,7 +510,7 @@ export default function Popup() {
         
         {/* DO THIS FIRST BANNER */}
         {filteredAssignments.length > 0 && activeFilter !== 'completed' && filteredAssignments[0].bucket === 'NOW' && (
-          <div className="glass-panel" style={{ border: '1px solid var(--accent-primary)' }}>
+          <div className="retro-window" style={{ border: '1px solid var(--accent-primary)' }}>
             <div className="retro-titlebar" style={{ background: 'var(--accent-primary)', color: 'white', borderBottomColor: 'var(--accent-primary)' }}>
               <span>🌟 TOP PRIORITY 🌟</span>
             </div>
@@ -518,7 +518,7 @@ export default function Popup() {
               <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', margin: '0 0 8px 0', color: 'var(--text-secondary)' }}>
                 Your immediate focus is:
               </p>
-              <h3 style={{ fontFamily: 'var(--font-pixel)', fontSize: '14px', color: 'var(--accent-secondary)', textShadow: '0 0 8px var(--cyan-glow)', margin: '0 0 12px 0', lineHeight: '1.4' }}>
+              <h3 style={{ fontFamily: 'var(--font-pixel)', fontSize: '14px', color: 'var(--accent-secondary)', margin: '0 0 12px 0', lineHeight: '1.4' }}>
                 {filteredAssignments[0].title}
               </h3>
               <div className="retro-inset" style={{ display: 'inline-block', padding: '6px 12px', fontFamily: 'var(--font-vt323)', fontSize: '16px', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)' }}>
@@ -556,13 +556,13 @@ export default function Popup() {
                   margin: '24px 0 12px 0', 
                   fontFamily: 'var(--font-pixel)', 
                   color: task.bucket === 'NOW' ? 'var(--accent-primary)' : task.bucket === 'NEXT' ? 'orange' : 'var(--success)',
-                  textShadow: task.bucket === 'NOW' ? '0 0 10px var(--accent-glow)' : 'none',
+                  textShadow: 'none',
                   fontSize: '12px'
                 }}>
                   === [ {task.bucket} ] ===
                 </div>
               )}
-            <div className="glass-panel" style={{ opacity: isSubtask ? 0.9 : 1, transform: isSubtask ? 'scale(0.98)' : 'none', marginLeft: isSubtask ? '12px' : '0' }}>
+            <div className="retro-window" style={{ marginLeft: isSubtask ? '12px' : '0' }}>
             <div className={`retro-titlebar ${critical ? 'critical' : ''}`}>
               <span>#{index + 1} {task.title.substring(0,20)}{task.title.length > 20 ? '...' : ''}</span>
               <div className="title-btns">

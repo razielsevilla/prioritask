@@ -76,7 +76,7 @@ export default function Options() {
   return (
     <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
       
-      <div className="glass-panel" style={{ marginBottom: '24px' }}>
+      <div className="retro-window" style={{ marginBottom: '24px' }}>
         <div className="retro-titlebar" style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>⚙️ OPTIONS_PANEL.exe</span>
           <div className="title-btns">
