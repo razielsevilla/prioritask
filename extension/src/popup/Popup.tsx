@@ -252,17 +252,17 @@ export default function Popup() {
     <div style={{ padding: '16px' }}>
       
       {/* HEADER */}
-      <div className="retro-window" style={{ marginBottom: '16px' }}>
+      <div className="glass-panel" style={{ marginBottom: '16px' }}>
         <div className="retro-titlebar">
-          <span>PrioriTask_2000.exe</span>
+          <span>PRIORITASK_OS.exe</span>
           <div className="title-btns">
             <button className="title-btn">_</button>
             <button className="title-btn">□</button>
             <button className="title-btn">X</button>
           </div>
         </div>
-        <div style={{ padding: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '14px', color: 'var(--accent-primary)', textShadow: '1px 1px 0 var(--border-dark)' }}>💿 PrioriTask</h2>
+        <div style={{ padding: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '18px', color: 'var(--accent-primary)', textShadow: '0 0 10px var(--accent-glow)' }}>✦ PrioriTask ✦</h2>
         </div>
       </div>
       
@@ -278,27 +278,30 @@ export default function Popup() {
         const hasOverdue = pending.some(t => new Date(t.dueAt).getTime() < Date.now());
         const hasCritical = pending.some(t => t.fsrRatio >= 0.75);
         
-        let petStatus = '💅';
-        let petMessage = 'All good, bestie!';
-        let bg = '#FDF4FF';
+        let petStatus = '😸';
+        let petMessage = 'SYSTEM OPTIMAL. Awaiting directives.';
+        let glowBorder = 'var(--accent-secondary)';
+        let glitchClass = '';
         
         if (hasOverdue) {
-          petStatus = '😵';
-          petMessage = 'Tasks are overdue!!';
-          bg = '#ffcccc';
+          petStatus = '😿';
+          petMessage = 'SYSTEM FAILURE. Tasks Overdue.';
+          glowBorder = 'var(--danger)';
+          glitchClass = 'glitch';
         } else if (hasCritical) {
-          petStatus = '😨';
-          petMessage = 'Critical workload!';
-          bg = '#ffe5b4';
-        } else if (pending.length > 0) {
-          petStatus = '💻';
-          petMessage = 'Time to grind!';
+          petStatus = '🙀';
+          petMessage = 'WARNING. Capacity overload detected.';
+          glowBorder = 'orange';
+        } else if (pending.some(t => t.bucket === 'NOW')) {
+          petStatus = '😼';
+          petMessage = 'HYPER-FOCUS ENGAGED. Prioritize [NOW].';
+          glowBorder = 'var(--accent-primary)';
         }
 
         return (
-          <div className="retro-inset" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', background: bg, padding: '8px' }}>
-            <div style={{ fontSize: '32px', filter: 'drop-shadow(2px 2px 0px rgba(0,0,0,0.2))' }}>{petStatus}</div>
-            <div style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', color: 'black', fontWeight: 'bold' }}>
+          <div className={`glass-panel ${glitchClass}`} style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', padding: '12px', borderLeft: `4px solid ${glowBorder}` }}>
+            <div style={{ fontSize: '42px', filter: `drop-shadow(0 0 10px ${glowBorder})` }}>{petStatus}</div>
+            <div style={{ fontFamily: 'var(--font-vt323)', fontSize: '16px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
               <div>{petMessage}</div>
             </div>
           </div>
@@ -325,7 +328,7 @@ export default function Popup() {
       <div style={{ display: 'flex', gap: '8px', margin: '8px 0' }}>
         <button 
           className="retro-btn" 
-          style={{ flex: 1, backgroundColor: '#E0FFFF', color: 'black', border: '2px solid black' }}
+          style={{ flex: 1 }}
           onClick={() => {
             setIsSaving(true);
             setStatusMessage('Scanning active tab for tasks...');
@@ -440,18 +443,18 @@ export default function Popup() {
         
         {/* DO THIS FIRST BANNER */}
         {filteredAssignments.length > 0 && activeFilter !== 'completed' && filteredAssignments[0].bucket === 'NOW' && (
-          <div className="retro-window" style={{ borderColor: 'var(--accent-secondary)', backgroundColor: '#E0FFFF' }}>
-            <div className="retro-titlebar" style={{ background: 'var(--accent-secondary)', color: 'black', borderBottomColor: 'black' }}>
+          <div className="glass-panel" style={{ border: '1px solid var(--accent-primary)' }}>
+            <div className="retro-titlebar" style={{ background: 'var(--accent-primary)', color: 'white', borderBottomColor: 'var(--accent-primary)' }}>
               <span>🌟 TOP PRIORITY 🌟</span>
             </div>
-            <div style={{ padding: '12px', textAlign: 'center' }}>
-              <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', margin: '0 0 8px 0', color: 'black' }}>
+            <div style={{ padding: '16px', textAlign: 'center' }}>
+              <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', margin: '0 0 8px 0', color: 'var(--text-secondary)' }}>
                 Your immediate focus is:
               </p>
-              <h3 style={{ fontFamily: 'var(--font-pixel)', fontSize: '14px', color: 'var(--accent-primary)', textShadow: '1px 1px 0px white', margin: '0 0 8px 0', lineHeight: '1.4' }}>
+              <h3 style={{ fontFamily: 'var(--font-pixel)', fontSize: '14px', color: 'var(--accent-secondary)', textShadow: '0 0 8px var(--cyan-glow)', margin: '0 0 12px 0', lineHeight: '1.4' }}>
                 {filteredAssignments[0].title}
               </h3>
-              <div className="retro-inset" style={{ display: 'inline-block', backgroundColor: 'white', padding: '4px 8px', fontFamily: 'var(--font-vt323)', fontSize: '14px' }}>
+              <div className="retro-inset" style={{ display: 'inline-block', padding: '6px 12px', fontFamily: 'var(--font-vt323)', fontSize: '16px', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)' }}>
                 Pressure Score: <strong>{filteredAssignments[0].pressureScore.toFixed(2)}</strong>
               </div>
             </div>
@@ -480,15 +483,16 @@ export default function Popup() {
             <div key={task.id}>
               {showBucketBanner && (
                 <div style={{ 
-                  margin: '16px 0 8px 0', 
+                  margin: '24px 0 12px 0', 
                   fontFamily: 'var(--font-pixel)', 
-                  color: task.bucket === 'NOW' ? 'red' : task.bucket === 'NEXT' ? 'orange' : 'green',
-                  textShadow: '1px 1px 0px white'
+                  color: task.bucket === 'NOW' ? 'var(--accent-primary)' : task.bucket === 'NEXT' ? 'orange' : 'var(--success)',
+                  textShadow: task.bucket === 'NOW' ? '0 0 10px var(--accent-glow)' : 'none',
+                  fontSize: '12px'
                 }}>
                   === [ {task.bucket} ] ===
                 </div>
               )}
-            <div className="retro-window">
+            <div className="glass-panel">
             <div className={`retro-titlebar ${critical ? 'critical' : ''}`}>
               <span>#{index + 1} {task.title.substring(0,20)}{task.title.length > 20 ? '...' : ''}</span>
               <div className="title-btns">
@@ -497,7 +501,7 @@ export default function Popup() {
               </div>
             </div>
             
-            <div style={{ padding: '8px', backgroundColor: critical ? '#fff5f5' : 'var(--surface)' }}>
+            <div style={{ padding: '12px', backgroundColor: critical ? 'rgba(255, 0, 60, 0.1)' : 'transparent' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>

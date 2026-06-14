@@ -7,7 +7,7 @@ function App() {
       <header className="header">
         <div className="marquee-container retro-inset">
           <div className="marquee-content">
-            ✦✧✦ WELCOME TO PRIORITASK 2000 ✦ ELIMINATE CHOICE ANXIETY ✦ MASTER YOUR DEADLINES ✦ YOUR PERFECT ACTION PIPELINE IS READY ✦✧✦
+            ✦✧✦ WELCOME TO PRIORITASK_OS ✦ ELIMINATE CHOICE ANXIETY ✦ MASTER YOUR DEADLINES ✦ YOUR PERFECT ACTION PIPELINE IS READY ✦✧✦
           </div>
         </div>
         <div className="container header-content">
@@ -29,7 +29,7 @@ function App() {
           
           <h1>
             Defeat Decision Fatigue.<br />
-            <span style={{ color: 'var(--text-primary)', textShadow: '3px 3px 0px var(--accent-secondary)' }}>Just Do It [NOW].</span>
+            <span style={{ color: 'var(--accent-primary)', textShadow: '0 0 15px var(--accent-glow)' }}>Just Do It [NOW].</span>
           </h1>
           <p className="retro-inset">
             PrioriTask is the intelligent Chrome extension that automatically organizes your assignments into actionable <strong>Now, Next, and Later</strong> buckets based on their time pressure. Focus on what matters, exactly when it matters. ✨
@@ -43,7 +43,7 @@ function App() {
             </a>
           </div>
           
-          <div className="retro-window" style={{ marginTop: '4rem', textAlign: 'left', maxWidth: '600px', margin: '4rem auto 0', position: 'relative', zIndex: 10 }}>
+          <div className="glass-panel" style={{ marginTop: '4rem', textAlign: 'left', maxWidth: '600px', margin: '4rem auto 0', position: 'relative', zIndex: 10 }}>
             <div className="retro-titlebar">
               <span>install_guide.txt</span>
               <div className="title-btns">
@@ -52,12 +52,12 @@ function App() {
                 <button className="title-btn">X</button>
               </div>
             </div>
-            <div style={{ padding: '1.5rem', background: 'var(--surface)' }}>
-              <h3 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '0.9rem', background: 'var(--accent-secondary)', display: 'inline-block', padding: '4px 8px' }}>How to Install (Dev Mode)</h3>
-              <ol style={{ paddingLeft: '1.5rem', margin: 0, lineHeight: '2', fontFamily: 'var(--font-vt323)', fontSize: '1.3rem' }}>
+            <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.4)' }}>
+              <h3 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '0.9rem', color: 'var(--accent-secondary)', display: 'inline-block', borderBottom: '1px solid var(--accent-secondary)', paddingBottom: '4px' }}>How to Install (Dev Mode)</h3>
+              <ol style={{ paddingLeft: '1.5rem', margin: 0, lineHeight: '2', fontFamily: 'var(--font-vt323)', fontSize: '1.3rem', color: 'var(--text-primary)' }}>
                 <li>Download the <strong>.zip</strong> file from the latest release.</li>
                 <li>Extract the downloaded <code>.zip</code> file to a folder.</li>
-                <li>Open Chrome and navigate to <code>chrome://extensions/</code>.</li>
+                <li>Open Chrome and navigate to <code style={{ color: 'var(--accent-secondary)' }}>chrome://extensions/</code>.</li>
                 <li>Enable <strong>Developer mode</strong> (toggle in top right).</li>
                 <li>Click <strong>Load unpacked</strong> and select the folder.</li>
               </ol>
@@ -72,7 +72,7 @@ function App() {
           </div>
           
           <div className="features-grid">
-            <div className="retro-window feature-card">
+            <div className="glass-panel feature-card">
               <div className="retro-titlebar">
                 <span>time_buckets.exe</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
@@ -84,7 +84,7 @@ function App() {
               </div>
             </div>
             
-            <div className="retro-window feature-card">
+            <div className="glass-panel feature-card">
               <div className="retro-titlebar">
                 <span>tshirt_sizing.vbx</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
@@ -96,7 +96,7 @@ function App() {
               </div>
             </div>
             
-            <div className="retro-window feature-card">
+            <div className="glass-panel feature-card">
               <div className="retro-titlebar">
                 <span>risk_alert.dll</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
@@ -111,7 +111,7 @@ function App() {
         </section>
 
         <section className="algo-section container">
-          <div className="retro-window">
+          <div className="glass-panel">
             <div className="retro-titlebar">
               <span>pipeline.exe</span>
               <div className="title-btns">
@@ -122,8 +122,8 @@ function App() {
             </div>
             <div className="terminal-window">
               <div className="terminal-header">
-                PrioriTask Engine v2.0<br/>
-                Copyright (C) 2026 Candypop Inc.<br/>
+                PRIORITASK_OS v2.0<br/>
+                Copyright (C) 2026 Cyberdyne<br/>
                 Initializing core algorithms... OK
               </div>
               <div><span className="terminal-prompt">C:\&gt;</span> cat now_bucket.sys</div>
