@@ -382,6 +382,13 @@ export default function Popup() {
         >
           ➕ {editingId ? 'Edit Task' : 'Add Task'}
         </button>
+        <button 
+          className="retro-tab"
+          onClick={() => chrome.tabs.create({ url: 'dashboard.html' })}
+          style={{ marginLeft: 'auto', background: 'var(--accent-primary)', color: 'white' }}
+        >
+          🚀 Full Dashboard
+        </button>
       </div>
       
       {/* SYNC BUTTON */}

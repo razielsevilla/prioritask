@@ -16,7 +16,8 @@ function App() {
             <span>PrioriTask</span>
           </div>
           <nav>
-            <a href="#features" className="btn btn-secondary">Learn More</a>
+            <a href="#features" className="btn btn-secondary" style={{ marginRight: '8px' }}>Learn More</a>
+            <a href="https://github.com/razielsevilla/prioritask" target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ background: 'var(--accent-primary)', color: 'white' }}>Launch Dashboard (via Ext)</a>
           </nav>
         </div>
       </header>
@@ -34,12 +35,11 @@ function App() {
           <p className="retro-inset">
             PrioriTask is the intelligent Chrome extension that automatically organizes your assignments into actionable <strong>Now, Next, and Later</strong> buckets based on their time pressure. Focus on what matters, exactly when it matters. ✨
           </p>
-          <div className="hero-actions">
-            <a href="https://github.com/razielsevilla/prioritask/releases/latest" target="_blank" rel="noopener noreferrer" className="btn btn-primary blink">
-              ▶ Download Ext (.zip)
-            </a>
-            <a href="https://github.com/razielsevilla/prioritask" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
-              View Source GitHub
+            <button onClick={() => alert('Please install the Chrome Extension and click "🚀 Full Dashboard" in the popup to open the Immersive Dashboard.')} className="btn btn-primary blink">
+              ▶ Launch Web Dashboard
+            </button>
+            <a href="https://github.com/razielsevilla/prioritask/releases/latest" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+              Download Ext (.zip)
             </a>
           </div>
           
