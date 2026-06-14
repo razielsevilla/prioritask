@@ -2,17 +2,13 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { repository } from '../storage/repository';
 import { rankAssignments } from '../utils/pipeline';
 import { evaluateAddPrioritizeFlow } from '../utils/usability';
-import type { Assignment, AlgorithmMode, ComputedAssignment, UserSettings } from '../types/models';
+import type { Assignment, TShirtSize, ComputedAssignment, UserSettings } from '../types/models';
 import { assignmentSchema } from '../types/validators';
 
 const DEFAULT_SETTINGS: UserSettings = {
-  defaultMode: 'DDS',
-  alpha: 0.5,
   epsilon: 0.1,
-  gamma: 0.5,
-  defaultNeed: 5,
-  uncertaintyDefault: 5,
   availableHoursPerDay: 4,
+  defaultTShirtSize: 'M',
   reminderWindows: [48, 24, 6],
   checkIntervalMinutes: 30,
   notificationEnabled: true,
@@ -26,7 +22,6 @@ export default function Popup() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
-  const [mode, setMode] = useState<AlgorithmMode>('DDS');
   const [activeFilter, setActiveFilter] = useState<'all' | 'today' | 'week' | 'overdue' | 'completed'>('all');
   const [flowStartAt, setFlowStartAt] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
@@ -53,8 +48,7 @@ export default function Popup() {
   // Form State
   const [title, setTitle] = useState('');
   const [dueAt, setDueAt] = useState('');
-  const [difficulty, setDifficulty] = useState<number | ''>('');
-  const [effortHours, setEffortHours] = useState<number | ''>('');
+  const [tShirtSize, setTShirtSize] = useState<TShirtSize>('M');
   
   // Validation State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -66,7 +60,6 @@ export default function Popup() {
       const activeSettings = savedSettings ?? DEFAULT_SETTINGS;
       setAllAssignments(rawData);
       setSettings(activeSettings);
-      setMode(activeSettings.defaultMode);
       setAssignments(rankAssignments(rawData, activeSettings));
     } catch {
       setStatusMessage('Error loading tasks.');
@@ -80,9 +73,7 @@ export default function Popup() {
   const resetForm = () => {
     setTitle('');
     setDueAt('');
-    setDifficulty('');
-    setEffortHours('');
-    setMode(settings?.defaultMode ?? DEFAULT_SETTINGS.defaultMode);
+    setTShirtSize(settings?.defaultTShirtSize ?? 'M');
     setEditingId(null);
     setErrors({});
     setFlowStartAt(null);
@@ -95,8 +86,7 @@ export default function Popup() {
     const formData = {
       title: title.trim(),
       dueAt,
-      difficulty: difficulty === '' ? null : Number(difficulty),
-      effortHours: effortHours === '' ? null : Number(effortHours),
+      tShirtSize,
     };
 
     const validationResult = assignmentSchema.safeParse(formData);
@@ -120,12 +110,7 @@ export default function Popup() {
       title: validationResult.data.title,
       course: null,
       dueAt: new Date(validationResult.data.dueAt).toISOString(),
-      mode,
-      difficulty: validationResult.data.difficulty,
-      benefitPoints: null, 
-      weight: null,
-      effortHours: validationResult.data.effortHours,
-      currentGrade: null,
+      tShirtSize: validationResult.data.tShirtSize,
       status: 'pending',
       createdAt: editingId ? (allAssignments.find((a) => a.id === editingId)?.createdAt || now) : now,
       updatedAt: now,
@@ -158,9 +143,7 @@ export default function Popup() {
     setEditingId(assignment.id);
     setTitle(assignment.title);
     setDueAt(new Date(assignment.dueAt).toISOString().slice(0, 16));
-    setMode(assignment.mode);
-    setDifficulty(assignment.difficulty ?? '');
-    setEffortHours(assignment.effortHours ?? '');
+    setTShirtSize(assignment.tShirtSize ?? 'M');
     setErrors({});
     setStatusMessage('');
     setFlowStartAt(null);
@@ -209,9 +192,9 @@ export default function Popup() {
         .map((task) => ({
           ...task,
           safeDaysLeft: 999,
-          baseScore: 0,
-          riskScore: 0,
-          finalPriorityScore: 0,
+          pressureScore: 0,
+          fsrRatio: 0,
+          bucket: 'LATER',
           explanationReasons: ['Completed'],
         }));
     }
@@ -278,17 +261,8 @@ export default function Popup() {
             <button className="title-btn">X</button>
           </div>
         </div>
-        <div style={{ padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <h2 style={{ fontSize: '14px', color: 'var(--accent-primary)', textShadow: '1px 1px 0 var(--border-dark)' }}>💿 PrioriTask</h2>
-          <label style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-vt323)' }}>
-            Mode
-            <select value={mode} onChange={(e) => setMode(e.target.value as AlgorithmMode)}>
-              <option value="DDS">DDS</option>
-              <option value="DoD">DoD</option>
-              <option value="B2D">B2D</option>
-              <option value="EoC">EoC</option>
-            </select>
-          </label>
         </div>
       </div>
       
@@ -302,8 +276,7 @@ export default function Popup() {
       {(() => {
         const pending = assignments.filter(t => t.status !== 'completed');
         const hasOverdue = pending.some(t => new Date(t.dueAt).getTime() < Date.now());
-        // In pipeline, riskScore is finalPriorityScore - baseScore. If it's > 0, risk boost was applied.
-        const hasCritical = pending.some(t => t.riskScore > 0);
+        const hasCritical = pending.some(t => t.fsrRatio >= 0.75);
         
         let petStatus = '💅';
         let petMessage = 'All good, bestie!';
@@ -378,19 +351,17 @@ export default function Popup() {
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <div style={{ width: '50%' }}>
-              <input 
-                type="number" placeholder="Difficulty (1-10)" step="0.1" 
-                value={difficulty} onChange={(e) => setDifficulty(e.target.value ? Number(e.target.value) : '')}
-                style={{ width: '100%', borderColor: errors.difficulty ? 'red' : '' }}
-              />
-            </div>
-            <div style={{ width: '50%' }}>
-              <input 
-                type="number" placeholder="Effort (Hrs)" step="0.5" 
-                value={effortHours} onChange={(e) => setEffortHours(e.target.value ? Number(e.target.value) : '')}
-                style={{ width: '100%', borderColor: errors.effortHours ? 'red' : '' }}
-              />
+            <div style={{ width: '100%' }}>
+              <select 
+                value={tShirtSize} 
+                onChange={(e) => setTShirtSize(e.target.value as TShirtSize)}
+                style={{ width: '100%', borderColor: errors.tShirtSize ? 'red' : '', padding: '4px' }}
+                className="retro-inset"
+              >
+                <option value="S">Small (~1 Hour)</option>
+                <option value="M">Medium (~3 Hours)</option>
+                <option value="L">Large (~8 Hours)</option>
+              </select>
             </div>
           </div>
 
@@ -434,20 +405,20 @@ export default function Popup() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         
         {/* DO THIS FIRST BANNER */}
-        {filteredAssignments.length > 0 && activeFilter !== 'completed' && (
+        {filteredAssignments.length > 0 && activeFilter !== 'completed' && filteredAssignments[0].bucket === 'NOW' && (
           <div className="retro-window" style={{ borderColor: 'var(--accent-secondary)', backgroundColor: '#E0FFFF' }}>
             <div className="retro-titlebar" style={{ background: 'var(--accent-secondary)', color: 'black', borderBottomColor: 'black' }}>
-              <span>🌟 UP NEXT 🌟</span>
+              <span>🌟 TOP PRIORITY 🌟</span>
             </div>
             <div style={{ padding: '12px', textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', margin: '0 0 8px 0', color: 'black' }}>
-                Your top priority is:
+                Your immediate focus is:
               </p>
               <h3 style={{ fontFamily: 'var(--font-pixel)', fontSize: '14px', color: 'var(--accent-primary)', textShadow: '1px 1px 0px white', margin: '0 0 8px 0', lineHeight: '1.4' }}>
                 {filteredAssignments[0].title}
               </h3>
               <div className="retro-inset" style={{ display: 'inline-block', backgroundColor: 'white', padding: '4px 8px', fontFamily: 'var(--font-vt323)', fontSize: '14px' }}>
-                Priority Score: <strong>{filteredAssignments[0].finalPriorityScore.toFixed(1)}</strong>
+                Pressure Score: <strong>{filteredAssignments[0].pressureScore.toFixed(2)}</strong>
               </div>
             </div>
           </div>
@@ -467,9 +438,23 @@ export default function Popup() {
         
         {filteredAssignments.map((task, index) => {
           const critical = isCriticalTask(task);
+          
+          const previousTask = index > 0 ? filteredAssignments[index - 1] : null;
+          const showBucketBanner = activeFilter === 'all' && (!previousTask || previousTask.bucket !== task.bucket);
 
           return (
-          <div key={task.id} className="retro-window">
+            <div key={task.id}>
+              {showBucketBanner && (
+                <div style={{ 
+                  margin: '16px 0 8px 0', 
+                  fontFamily: 'var(--font-pixel)', 
+                  color: task.bucket === 'NOW' ? 'red' : task.bucket === 'NEXT' ? 'orange' : 'green',
+                  textShadow: '1px 1px 0px white'
+                }}>
+                  === [ {task.bucket} ] ===
+                </div>
+              )}
+            <div className="retro-window">
             <div className={`retro-titlebar ${critical ? 'critical' : ''}`}>
               <span>#{index + 1} {task.title.substring(0,20)}{task.title.length > 20 ? '...' : ''}</span>
               <div className="title-btns">
@@ -486,14 +471,14 @@ export default function Popup() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--accent-primary)', fontFamily: 'var(--font-vt323)' }}>
-                    {task.finalPriorityScore.toFixed(1)}
+                    {task.pressureScore.toFixed(2)}
                   </div>
-                  <div style={{ fontSize: '10px', textTransform: 'uppercase' }}>Score</div>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase' }}>Pressure</div>
                 </div>
               </div>
 
               <div className="retro-inset" style={{ marginBottom: '8px', fontSize: '12px' }}>
-                <strong>Why here?</strong> {task.explanationReasons.slice(0, 2).join(' + ') || 'Balanced by urgency and effort'}
+                <strong>Size:</strong> {task.tShirtSize} | <strong>Safe Days:</strong> {Math.floor(task.safeDaysLeft)}
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
@@ -513,6 +498,7 @@ export default function Popup() {
                 </label>
               </div>
             </div>
+          </div>
           </div>
         );})}
       </div>

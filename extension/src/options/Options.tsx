@@ -2,15 +2,10 @@ import { useState, useEffect } from 'react';
 import { repository } from '../storage/repository';
 import type { UserSettings } from '../types/models';
 
-// [x] Defaults are applied when settings are missing.
 const DEFAULT_SETTINGS: UserSettings = {
-  defaultMode: 'DDS',
-  alpha: 0.5,
   epsilon: 0.1,
-  gamma: 0.5,
-  defaultNeed: 5,
-  uncertaintyDefault: 5,
   availableHoursPerDay: 4,
+  defaultTShirtSize: 'M',
   reminderWindows: [48, 24, 6],
   checkIntervalMinutes: 30,
   notificationEnabled: true,
@@ -92,7 +87,7 @@ export default function Options() {
 
         <div style={{ padding: '16px' }}>
           <h2 style={{ fontFamily: 'var(--font-pixel)', fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '8px', textShadow: '1px 1px 0px white' }}>PrioriTask Control Panel</h2>
-          <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', marginBottom: '16px' }}>Configure your scoring engine and algorithm constants here.</p>
+          <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px', marginBottom: '16px' }}>Configure your scoring engine and default preferences here.</p>
 
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
@@ -102,39 +97,17 @@ export default function Options() {
                 <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px' }}>[ General Preferences ]</span>
               </div>
               <label style={{ display: 'block', marginBottom: '12px', fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
-                Default Algorithm Mode:<br/>
-                <select className="retro-inset" name="defaultMode" value={settings.defaultMode} onChange={handleChange} style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }}>
-                  <option value="DDS">DDS (Due Date Score)</option>
-                  <option value="DoD">DoD (Difficulty over Days)</option>
-                  <option value="B2D">B2D (Benefit to Difficulty/Days)</option>
-                  <option value="EoC">EoC (Effort-Weighted Grade Impact)</option>
+                Default T-Shirt Size (Estimated Effort):<br/>
+                <select className="retro-inset" name="defaultTShirtSize" value={settings.defaultTShirtSize} onChange={handleChange} style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }}>
+                  <option value="S">Small (~1 Hour)</option>
+                  <option value="M">Medium (~3 Hours)</option>
+                  <option value="L">Large (~8 Hours)</option>
                 </select>
               </label>
               <label style={{ display: 'block', fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
                 Available Work Hours Per Day:<br/>
                 <input className="retro-inset" type="number" name="availableHoursPerDay" value={settings.availableHoursPerDay} onChange={handleChange} min="1" max="24" style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }} />
               </label>
-            </div>
-
-            {/* Algorithm Tuning */}
-            <div className="retro-inset" style={{ padding: '12px' }}>
-              <div className="retro-titlebar" style={{ background: '#FFB6C1', color: 'black', borderBottom: 'none', marginBottom: '8px', padding: '4px' }}>
-                <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px' }}>[ Engine Constants ]</span>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
-                <label style={{ flex: 1 }}>
-                  Alpha (Difficulty):<br/>
-                  <input className="retro-inset" type="number" name="alpha" value={settings.alpha} onChange={handleChange} step="0.1" style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }} />
-                </label>
-                <label style={{ flex: 1 }}>
-                  Epsilon (Safety buffer):<br/>
-                  <input className="retro-inset" type="number" name="epsilon" value={settings.epsilon} onChange={handleChange} step="0.01" style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }} />
-                </label>
-                <label style={{ flex: 1 }}>
-                  Gamma:<br/>
-                  <input className="retro-inset" type="number" name="gamma" value={settings.gamma} onChange={handleChange} step="0.1" style={{ width: '100%', marginTop: '4px', background: 'white', padding: '4px' }} />
-                </label>
-              </div>
             </div>
 
             {/* Notifications */}
