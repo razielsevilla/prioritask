@@ -1,4 +1,4 @@
-import type { Assignment, UserSettings } from '../types/models';
+import type { Assignment, UserSettings, TShirtSize, BucketType } from '../types/models';
 
 /**
  * Calculates the safe days remaining until the deadline.
@@ -15,54 +15,26 @@ export const getSafeDaysLeft = (dueAt: string, epsilon: number): number => {
 };
 
 /**
- * [x] DDS_safe: Due Date Score
- * Pure urgency ranking.
- * Score = 1 / D_safe
+ * Converts a T-Shirt size to estimated effort hours.
  */
-export const DDS_safe = (assignment: Assignment, settings: UserSettings): number => {
-  const dSafe = getSafeDaysLeft(assignment.dueAt, settings.epsilon);
-  return 1 / dSafe;
+export const getEffortHours = (size: TShirtSize): number => {
+  switch (size) {
+    case 'S': return 1;
+    case 'M': return 3;
+    case 'L': return 8;
+    default: return 3;
+  }
 };
 
 /**
- * [x] DoD_safe: Difficulty over Days
- * Balances subjective difficulty with urgency.
- * Score = (Difficulty * Alpha) / D_safe
+ * Unified "Smart Pressure" Algorithm.
+ * Pressure Score = Effort Hours / Days Left
  */
-export const DoD_safe = (assignment: Assignment, settings: UserSettings): number => {
+export const calculateTimePressure = (assignment: Assignment, settings: UserSettings): number => {
   const dSafe = getSafeDaysLeft(assignment.dueAt, settings.epsilon);
-  // Fallback to uncertaintyDefault if difficulty is null
-  const diff = assignment.difficulty ?? settings.uncertaintyDefault; 
+  const effort = getEffortHours(assignment.tShirtSize ?? settings.defaultTShirtSize);
   
-  return (diff * settings.alpha) / dSafe;
-};
-
-/**
- * [x] B2D_safe: Benefit to Difficulty and Days
- * Maximizes point efficiency per unit of subjective effort and time.
- * Score = Benefit / (Difficulty * D_safe)
- */
-export const B2D_safe = (assignment: Assignment, settings: UserSettings): number => {
-  const dSafe = getSafeDaysLeft(assignment.dueAt, settings.epsilon);
-  const diff = assignment.difficulty ?? settings.uncertaintyDefault;
-  const benefit = assignment.benefitPoints ?? settings.defaultNeed;
-  
-  // Using gamma as a scaling factor for the denominator if needed, 
-  // or just directly applying the ratio.
-  return benefit / (diff * dSafe * settings.gamma);
-};
-
-/**
- * [x] EoC_safe: Effort-Weighted Grade Impact
- * Optimizes for actual grade improvement against real hours.
- * Score = Weight / (EffortHours * D_safe)
- */
-export const EoC_safe = (assignment: Assignment, settings: UserSettings): number => {
-  const dSafe = getSafeDaysLeft(assignment.dueAt, settings.epsilon);
-  const weight = assignment.weight ?? 1; // Base weight fallback
-  const effort = assignment.effortHours ?? settings.defaultNeed;
-  
-  return weight / (effort * dSafe);
+  return effort / dSafe;
 };
 
 /**
@@ -73,7 +45,7 @@ export const EoC_safe = (assignment: Assignment, settings: UserSettings): number
  */
 export const calculateFSR = (assignment: Assignment, settings: UserSettings): number => {
   const dSafe = getSafeDaysLeft(assignment.dueAt, settings.epsilon);
-  const effort = assignment.effortHours ?? settings.defaultNeed;
+  const effort = getEffortHours(assignment.tShirtSize ?? settings.defaultTShirtSize);
   const capacity = dSafe * settings.availableHoursPerDay;
 
   // Prevent division by zero if available hours is 0
@@ -83,19 +55,19 @@ export const calculateFSR = (assignment: Assignment, settings: UserSettings): nu
 };
 
 /**
- * [x] RiskBoost Application & Risk Thresholds
- * Applies a multiplier to the base score if the FSR crosses dangerous capacity thresholds.
+ * Maps task scores to actionable buckets (NOW, NEXT, LATER).
  */
-export const applyRiskBoost = (baseScore: number, fsrRatio: number): number => {
-  // Threshold definitions
-  const CRITICAL_THRESHOLD = 1.0; // Task requires more hours than you have available
-  const WARNING_THRESHOLD = 0.75; // Task requires 75% or more of your total available time
-
-  if (fsrRatio >= CRITICAL_THRESHOLD) {
-    return baseScore * 10; // Massive boost for impossible/critical tasks
-  } else if (fsrRatio >= WARNING_THRESHOLD) {
-    return baseScore * 3; // Significant boost for high risk tasks
+export const mapToBucket = (pressureScore: number, fsrRatio: number, safeDaysLeft: number): BucketType => {
+  // If overdue or due within ~48 hours, or mathematically at risk
+  if (safeDaysLeft <= 2 || fsrRatio >= 0.75) {
+    return 'NOW';
   }
-
-  return baseScore; // No boost, capacity is healthy
+  
+  // If due within a week or has moderate pressure
+  if (safeDaysLeft <= 7 || pressureScore > 1.0) {
+    return 'NEXT';
+  }
+  
+  // Otherwise, safely on the radar
+  return 'LATER';
 };

@@ -1,5 +1,5 @@
 import { repository } from '../storage/repository';
-import { calculateFSR } from '../utils/algorithms';
+import { calculateFSR, getEffortHours } from '../utils/algorithms';
 import type { Assignment, UserSettings } from '../types/models';
 
 const SETTINGS_KEY = 'prioritask.settings';
@@ -29,13 +29,9 @@ type TaskRiskState = {
 type RiskStateMap = Record<string, TaskRiskState>;
 
 const DEFAULT_SETTINGS: UserSettings = {
-  defaultMode: 'DDS',
-  alpha: 0.5,
   epsilon: 0.1,
-  gamma: 0.5,
-  defaultNeed: 5,
-  uncertaintyDefault: 5,
   availableHoursPerDay: 4,
+  defaultTShirtSize: 'M',
   reminderWindows: [48, 24, 6],
   checkIntervalMinutes: 30,
   notificationEnabled: true,
@@ -311,7 +307,7 @@ const runRiskCheck = async (): Promise<void> => {
 
       if (shouldSendCritical) {
         const hoursAvailable = getSafeDaysLeft(task.dueAt, settings.epsilon) * settings.availableHoursPerDay;
-        const hoursNeeded = task.effortHours ?? settings.defaultNeed;
+        const hoursNeeded = getEffortHours(task.tShirtSize);
         const contextDetails = formatAssignmentContext(task);
         // [P4.4] Warning text clearly explains risk reason
         const message = `Critical workload risk! This task requires ${hoursNeeded}h but you have ~${hoursAvailable.toFixed(1)}h available before deadline.${contextDetails}`;
@@ -333,7 +329,7 @@ const runRiskCheck = async (): Promise<void> => {
 
       if (shouldSendWarning) {
         const hoursAvailable = getSafeDaysLeft(task.dueAt, settings.epsilon) * settings.availableHoursPerDay;
-        const hoursNeeded = task.effortHours ?? settings.defaultNeed;
+        const hoursNeeded = getEffortHours(task.tShirtSize);
         const percentCapacity = ((fsrRatio * 100) / 1.0).toFixed(0);
         const contextDetails = formatAssignmentContext(task);
         // [P4.4] Warning text clearly explains risk reason

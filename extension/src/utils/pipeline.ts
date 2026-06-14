@@ -1,4 +1,4 @@
-import { DDS_safe, DoD_safe, B2D_safe, EoC_safe, calculateFSR, applyRiskBoost, getSafeDaysLeft } from './algorithms';
+import { calculateTimePressure, calculateFSR, getSafeDaysLeft, mapToBucket } from './algorithms';
 import type { Assignment, UserSettings, ComputedAssignment } from '../types/models';
 
 /**
@@ -26,7 +26,7 @@ const generateExplanationTags = (
     tags.push('⚡ High Risk (Near Capacity)');
   }
 
-  // Impact / Difficulty Tags
+  // Legacy Impact / Difficulty Tags (if old data exists)
   if (task.difficulty && task.difficulty >= 8) {
     tags.push('🧗 High Difficulty');
   }
@@ -46,55 +46,55 @@ export const rankAssignments = (
 ): ComputedAssignment[] => {
   const now = Date.now();
 
-  // Step 1: Compute scores for all pending tasks
+  // Step 1: Compute scores and buckets for all pending tasks
   const computedAssignments: ComputedAssignment[] = assignments
     .filter(task => task.status !== 'completed')
     .map(task => {
       const safeDaysLeft = getSafeDaysLeft(task.dueAt, settings.epsilon);
       const isOverdue = new Date(task.dueAt).getTime() < now;
       
-      let baseScore = 0;
-      switch (task.mode) {
-        case 'DoD': baseScore = DoD_safe(task, settings); break;
-        case 'B2D': baseScore = B2D_safe(task, settings); break;
-        case 'EoC': baseScore = EoC_safe(task, settings); break;
-        case 'DDS': 
-        default: 
-          baseScore = DDS_safe(task, settings); break;
-      }
-
+      const pressureScore = calculateTimePressure(task, settings);
       const fsrRatio = calculateFSR(task, settings);
-      const finalPriorityScore = applyRiskBoost(baseScore, fsrRatio);
+      const bucket = mapToBucket(pressureScore, fsrRatio, safeDaysLeft);
       
-      // [x] Reason tags are generated for transparent scoring
       const explanationReasons = generateExplanationTags(task, safeDaysLeft, fsrRatio, isOverdue);
 
       return {
         ...task,
         safeDaysLeft,
-        baseScore,
-        riskScore: finalPriorityScore - baseScore,
-        finalPriorityScore,
-        explanationReasons // [x] Tags are assigned to the output model
+        pressureScore,
+        fsrRatio,
+        bucket,
+        explanationReasons
       };
     });
 
-  // Step 2: Sort into buckets and apply tie-breakers
+  // Step 2: Sort by Bucket (NOW > NEXT > LATER), then by pressure, then by due date
+  const bucketOrder = { 'NOW': 1, 'NEXT': 2, 'LATER': 3 };
+
   return computedAssignments.sort((a, b) => {
+    // 1. Sort by Bucket
+    if (bucketOrder[a.bucket] !== bucketOrder[b.bucket]) {
+      return bucketOrder[a.bucket] - bucketOrder[b.bucket];
+    }
+
+    // 2. Sort by Overdue status within the same bucket
     const aIsOverdue = new Date(a.dueAt).getTime() < now;
     const bIsOverdue = new Date(b.dueAt).getTime() < now;
-
     if (aIsOverdue && !bIsOverdue) return -1;
     if (!aIsOverdue && bIsOverdue) return 1; 
 
-    if (b.finalPriorityScore !== a.finalPriorityScore) {
-      return b.finalPriorityScore - a.finalPriorityScore;
+    // 3. Sort by Pressure Score (higher is more urgent)
+    if (b.pressureScore !== a.pressureScore) {
+      return b.pressureScore - a.pressureScore;
     }
 
+    // 4. Sort by Due Date
     const dueA = new Date(a.dueAt).getTime();
     const dueB = new Date(b.dueAt).getTime();
     if (dueA !== dueB) return dueA - dueB;
 
+    // 5. Alphabetical fallback
     return a.title.localeCompare(b.title);
   });
 };
