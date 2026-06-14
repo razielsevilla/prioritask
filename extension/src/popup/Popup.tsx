@@ -49,15 +49,13 @@ export default function Popup() {
       setMode(activeSettings.defaultMode);
       setAssignments(rankAssignments(rawData, activeSettings));
     } catch {
-      setStatusMessage('Unable to load tasks. Please reload the extension and try again.');
+      setStatusMessage('Error loading tasks.');
     }
   }, []);
 
   useEffect(() => {
     void loadAssignments();
   }, [loadAssignments]);
-
-
 
   const resetForm = () => {
     setTitle('');
@@ -74,7 +72,6 @@ export default function Popup() {
     e.preventDefault();
     setStatusMessage('');
     
-    // Prepare the data for validation
     const formData = {
       title: title.trim(),
       dueAt,
@@ -82,11 +79,9 @@ export default function Popup() {
       effortHours: effortHours === '' ? null : Number(effortHours),
     };
 
-    // [x] Required fields & Numeric ranges are validated
     const validationResult = assignmentSchema.safeParse(formData);
 
     if (!validationResult.success) {
-      // Map Zod errors to our state to show in the UI
       const formattedErrors: Record<string, string> = {};
       validationResult.error.issues.forEach(issue => {
         if (issue.path[0]) {
@@ -94,10 +89,9 @@ export default function Popup() {
         }
       });
       setErrors(formattedErrors);
-      return; // Stop saving!
+      return;
     }
 
-    // Clear errors if validation passes
     setErrors({});
     const now = new Date().toISOString();
     
@@ -130,10 +124,10 @@ export default function Popup() {
           ? 'Task updated.'
           : flowFeedback
             ? `Task added. ${flowFeedback.message}`
-            : 'Task added.',
+            : 'Task added.'
       );
     } catch {
-      setStatusMessage('Unable to save task. Please try again.');
+      setStatusMessage('Unable to save task.');
     } finally {
       setIsSaving(false);
     }
@@ -160,9 +154,8 @@ export default function Popup() {
     try {
       await repository.saveAssignment(updated);
       await loadAssignments();
-      setStatusMessage('Task status updated.');
     } catch {
-      setStatusMessage('Unable to update task status. Please try again.');
+      setStatusMessage('Error updating status.');
     }
   };
 
@@ -170,98 +163,14 @@ export default function Popup() {
     try {
       await repository.deleteAssignment(id);
       await loadAssignments();
-      setStatusMessage('Task deleted.');
     } catch {
-      setStatusMessage('Unable to delete task. Please try again.');
+      setStatusMessage('Error deleting task.');
     }
   };
 
   const isCriticalTask = (task: ComputedAssignment): boolean => {
     return task.safeDaysLeft <= 0.5
       || task.explanationReasons.some((tag) => tag.includes('Critical Risk') || tag.includes('Overdue'));
-  };
-
-  const getConfidenceForTask = (task: ComputedAssignment): {
-    label: 'High' | 'Medium' | 'Low';
-    defaultsUsed: string[];
-  } => {
-    const defaultsUsed: string[] = [];
-
-    if (task.mode === 'DoD' && task.difficulty == null) {
-      defaultsUsed.push('difficulty');
-    }
-
-    if (task.mode === 'B2D') {
-      if (task.difficulty == null) {
-        defaultsUsed.push('difficulty');
-      }
-      if (task.benefitPoints == null) {
-        defaultsUsed.push('benefit');
-      }
-    }
-
-    if (task.mode === 'EoC') {
-      if (task.weight == null) {
-        defaultsUsed.push('weight');
-      }
-      if (task.benefitPoints == null) {
-        defaultsUsed.push('benefit');
-      }
-      if (task.currentGrade == null) {
-        defaultsUsed.push('grade need');
-      }
-      if (task.effortHours == null) {
-        defaultsUsed.push('effort');
-      }
-    }
-
-    if (defaultsUsed.length === 0) {
-      return { label: 'High', defaultsUsed };
-    }
-
-    if (defaultsUsed.length <= 1) {
-      return { label: 'Medium', defaultsUsed };
-    }
-
-    return { label: 'Low', defaultsUsed };
-  };
-
-  const getWhyRankedHere = (task: ComputedAssignment): string => {
-    if (task.explanationReasons.length > 0) {
-      return task.explanationReasons.slice(0, 2).join(' + ');
-    }
-
-    if (task.safeDaysLeft <= 1) {
-      return 'Due very soon';
-    }
-
-    return 'Balanced by urgency and effort';
-  };
-
-  const getMissingDataHints = (task: ComputedAssignment): string[] => {
-    const hints: string[] = [];
-
-    if (task.status === 'completed') {
-      return hints;
-    }
-
-    if (task.difficulty == null) {
-      hints.push('Add difficulty for stronger ranking confidence.');
-    }
-
-    if (task.effortHours == null) {
-      hints.push('Add effort hours to improve schedule-risk accuracy.');
-    }
-
-    if ((task.mode === 'B2D' || task.mode === 'EoC') && task.benefitPoints == null) {
-      hints.push('Benefit/impact is using defaults from settings.');
-    }
-
-    if (task.mode === 'EoC' && task.weight == null) {
-      hints.push('Grade weight is using defaults from settings.');
-    }
-
-    return hints;
   };
 
   const filteredAssignments = useMemo<ComputedAssignment[]>(() => {
@@ -335,241 +244,178 @@ export default function Popup() {
   };
 
   return (
-    <div style={{ padding: '16px', minWidth: '380px', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-        <h2 style={{ margin: 0 }}>PrioriTask</h2>
-        <label style={{ fontSize: '12px', color: '#444', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          Mode
-          <select value={mode} onChange={(e) => setMode(e.target.value as AlgorithmMode)}>
-            <option value="DDS">DDS</option>
-            <option value="DoD">DoD</option>
-            <option value="B2D">B2D</option>
-            <option value="EoC">EoC</option>
-          </select>
-        </label>
-      </div>
-      {statusMessage ? <p style={{ marginTop: '0', color: '#444' }}>{statusMessage}</p> : null}
-      <p style={{ marginTop: '4px', fontSize: '11px', color: '#4b5563' }}>
-        Quick flow: Add task {'>'} pick a filter view {'>'} mark done. Press Enter to save.
-      </p>
+    <div style={{ padding: '16px' }}>
       
-      {/* Form Section */}
-      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-        
-        {/* [x] UI feedback is shown for invalid inputs */}
-        <div>
-          <input 
-            type="text" placeholder="Task Title" value={title} 
-            onChange={(e) => {
-              setTitle(e.target.value);
-              if (!editingId && flowStartAt == null && e.target.value.trim().length > 0) {
-                setFlowStartAt(Date.now());
-              }
-            }} 
-            style={{ width: '100%', borderColor: errors.title ? 'red' : '' }}
-          />
-          {errors.title && <span style={{ color: 'red', fontSize: '12px' }}>{errors.title}</span>}
-        </div>
-
-        <div>
-          <input 
-            type="datetime-local" value={dueAt} 
-            onChange={(e) => setDueAt(e.target.value)} 
-            style={{ width: '100%', borderColor: errors.dueAt ? 'red' : '' }}
-          />
-          {errors.dueAt && <span style={{ color: 'red', fontSize: '12px' }}>{errors.dueAt}</span>}
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <div style={{ width: '50%' }}>
-            <input 
-              type="number" placeholder="Difficulty (1-10)" step="0.1" 
-              value={difficulty} onChange={(e) => setDifficulty(e.target.value ? Number(e.target.value) : '')}
-              style={{ width: '100%', borderColor: errors.difficulty ? 'red' : '' }}
-            />
-            {errors.difficulty && <span style={{ color: 'red', fontSize: '12px' }}>{errors.difficulty}</span>}
-          </div>
-          <div style={{ width: '50%' }}>
-            <input 
-              type="number" placeholder="Effort (Hrs)" step="0.5" 
-              value={effortHours} onChange={(e) => setEffortHours(e.target.value ? Number(e.target.value) : '')}
-              style={{ width: '100%', borderColor: errors.effortHours ? 'red' : '' }}
-            />
-            {errors.effortHours && <span style={{ color: 'red', fontSize: '12px' }}>{errors.effortHours}</span>}
+      {/* HEADER */}
+      <div className="retro-window" style={{ marginBottom: '16px' }}>
+        <div className="retro-titlebar">
+          <span>PrioriTask_2000.exe</span>
+          <div className="title-btns">
+            <button className="title-btn">_</button>
+            <button className="title-btn">□</button>
+            <button className="title-btn">X</button>
           </div>
         </div>
-
-        {settings ? (
-          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#666' }}>
-            Ranking uses your saved settings (alpha {settings.alpha}, epsilon {settings.epsilon}, gamma {settings.gamma}).
-          </p>
-        ) : null}
-
-        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-          <button type="submit" style={{ flex: 1 }} disabled={isSaving}>{isSaving ? 'Saving...' : (editingId ? 'Update Task' : 'Add Task')}</button>
-          {editingId && <button type="button" onClick={resetForm} disabled={isSaving}>Cancel</button>}
+        <div style={{ padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '14px', color: 'var(--accent-primary)', textShadow: '1px 1px 0 var(--border-dark)' }}>💿 PrioriTask</h2>
+          <label style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-vt323)' }}>
+            Mode
+            <select value={mode} onChange={(e) => setMode(e.target.value as AlgorithmMode)}>
+              <option value="DDS">DDS</option>
+              <option value="DoD">DoD</option>
+              <option value="B2D">B2D</option>
+              <option value="EoC">EoC</option>
+            </select>
+          </label>
         </div>
+      </div>
+      
+      {statusMessage && (
+        <div className="retro-inset" style={{ marginBottom: '16px', background: 'var(--accent-secondary)', color: 'black', fontFamily: 'var(--font-vt323)' }}>
+          {statusMessage}
+        </div>
+      )}
+      
+      {/* FORM WINDOW */}
+      <div className="retro-window">
+        <div className="retro-titlebar">
+          <span>{editingId ? 'edit_task.bat' : 'add_task.bat'}</span>
+        </div>
+        <form onSubmit={handleSave} style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div>
+            <input 
+              type="text" placeholder="Task Title" value={title} 
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (!editingId && flowStartAt == null && e.target.value.trim().length > 0) {
+                  setFlowStartAt(Date.now());
+                }
+              }} 
+              style={{ width: '100%', borderColor: errors.title ? 'red' : '' }}
+            />
+            {errors.title && <span style={{ color: 'red', fontSize: '12px' }}>{errors.title}</span>}
+          </div>
 
-        {allAssignments.length === 0 ? (
-          <p style={{ fontSize: '11px', color: '#4b5563', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '8px' }}>
-            First task tip: Add a title, due date, and at least difficulty/effort for better prioritization.
-          </p>
-        ) : null}
-      </form>
+          <div>
+            <input 
+              type="datetime-local" value={dueAt} 
+              onChange={(e) => setDueAt(e.target.value)} 
+              style={{ width: '100%', borderColor: errors.dueAt ? 'red' : '' }}
+            />
+            {errors.dueAt && <span style={{ color: 'red', fontSize: '12px' }}>{errors.dueAt}</span>}
+          </div>
 
-      <hr />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ width: '50%' }}>
+              <input 
+                type="number" placeholder="Difficulty (1-10)" step="0.1" 
+                value={difficulty} onChange={(e) => setDifficulty(e.target.value ? Number(e.target.value) : '')}
+                style={{ width: '100%', borderColor: errors.difficulty ? 'red' : '' }}
+              />
+            </div>
+            <div style={{ width: '50%' }}>
+              <input 
+                type="number" placeholder="Effort (Hrs)" step="0.5" 
+                value={effortHours} onChange={(e) => setEffortHours(e.target.value ? Number(e.target.value) : '')}
+                style={{ width: '100%', borderColor: errors.effortHours ? 'red' : '' }}
+              />
+            </div>
+          </div>
 
-      {/* List Section */}
-      <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {[
-            { key: 'all', label: `All (${assignments.length})` },
-            { key: 'today', label: `Today (${filteredAssignmentsForLabel('today')})` },
-            { key: 'week', label: `This Week (${filteredAssignmentsForLabel('week')})` },
-            { key: 'overdue', label: `Overdue (${filteredAssignmentsForLabel('overdue')})` },
-            { key: 'completed', label: `Completed (${filteredAssignmentsForLabel('completed')})` },
-          ].map((filter) => (
-            <button
-              key={filter.key}
-              type="button"
-              onClick={() => setActiveFilter(filter.key as 'all' | 'today' | 'week' | 'overdue' | 'completed')}
-              style={{
-                fontSize: '11px',
-                padding: '4px 8px',
-                borderRadius: '999px',
-                border: activeFilter === filter.key ? '1px solid #2563eb' : '1px solid #d1d5db',
-                backgroundColor: activeFilter === filter.key ? '#eff6ff' : '#fff',
-                color: activeFilter === filter.key ? '#1d4ed8' : '#374151',
-                cursor: 'pointer',
-              }}
-            >
-              {filter.label}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <button type="submit" className="retro-btn primary" style={{ flex: 1 }} disabled={isSaving}>
+              {isSaving ? 'Saving...' : (editingId ? 'Update Task' : 'Add Task')}
             </button>
-          ))}
-        </div>
+            {editingId && (
+              <button type="button" className="retro-btn danger" onClick={resetForm} disabled={isSaving}>Cancel</button>
+            )}
+          </div>
+        </form>
+      </div>
 
-        {assignments.length > 0 ? (
-          <p style={{ fontSize: '11px', color: '#666' }}>
-            Ranked highest-to-lowest priority. Critical tasks are highlighted.
-          </p>
-        ) : null}
+      {/* FILTER BAR */}
+      <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        {[
+          { key: 'all', label: `All (${assignments.length})` },
+          { key: 'today', label: `Today (${filteredAssignmentsForLabel('today')})` },
+          { key: 'week', label: `Week (${filteredAssignmentsForLabel('week')})` },
+          { key: 'overdue', label: `Overdue (${filteredAssignmentsForLabel('overdue')})` },
+          { key: 'completed', label: `Done (${filteredAssignmentsForLabel('completed')})` },
+        ].map((filter) => (
+          <button
+            key={filter.key}
+            type="button"
+            className={`filter-btn ${activeFilter === filter.key ? 'active' : ''}`}
+            onClick={() => setActiveFilter(filter.key as any)}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ height: '8px' }}></div>
+
+      {/* TASK LIST */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {filteredAssignments.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>
-            {activeFilter === 'today' && 'No tasks due today.'}
-            {activeFilter === 'week' && 'No tasks due this week.'}
-            {activeFilter === 'overdue' && 'No overdue tasks. Great job!'}
-            {activeFilter === 'completed' && 'No completed tasks yet.'}
-            {activeFilter === 'all' && 'No pending tasks. Relax!'}
-          </p>
-        ) : null}
-
-        {activeFilter === 'all' && allAssignments.length === 0 ? (
-          <div style={{ border: '1px solid #dbeafe', backgroundColor: '#eff6ff', borderRadius: '8px', padding: '10px', color: '#1e3a8a', fontSize: '12px' }}>
-            <strong>Welcome to PrioriTask.</strong>
-            <p style={{ marginTop: '6px' }}>Get started in under 30 seconds:</p>
-            <p style={{ marginTop: '4px' }}>1) Add a task title</p>
-            <p style={{ marginTop: '2px' }}>2) Set due date/time</p>
-            <p style={{ marginTop: '2px' }}>3) Add difficulty and effort (optional but recommended)</p>
+          <div className="retro-inset" style={{ textAlign: 'center', padding: '24px 0' }}>
+            <p style={{ fontFamily: 'var(--font-vt323)', fontSize: '18px' }}>
+              {activeFilter === 'today' && 'No tasks due today. ✨'}
+              {activeFilter === 'week' && 'No tasks due this week. 🌸'}
+              {activeFilter === 'overdue' && 'No overdue tasks. Great job! 💿'}
+              {activeFilter === 'completed' && 'No completed tasks yet.'}
+              {activeFilter === 'all' && 'No pending tasks. Relax! 💅'}
+            </p>
           </div>
         ) : null}
         
         {filteredAssignments.map((task, index) => {
           const critical = isCriticalTask(task);
-          const confidence = getConfidenceForTask(task);
-          const missingDataHints = getMissingDataHints(task);
 
           return (
-          <div key={task.id} style={{ 
-            border: critical ? '1px solid #ef4444' : '1px solid #ccc',
-            padding: '12px',
-            borderRadius: '8px',
-            backgroundColor: critical ? '#fff5f5' : '#fff',
-            boxShadow: critical ? '0 2px 8px rgba(239, 68, 68, 0.15)' : 'none'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-              <div style={{ minWidth: '34px', textAlign: 'center' }}>
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  borderRadius: '999px',
-                  backgroundColor: critical ? '#ef4444' : '#e5e7eb',
-                  color: critical ? '#fff' : '#111827',
-                  padding: '6px 0'
-                }}>
-                  #{index + 1}
-                </div>
-              </div>
-              <div>
-                <h4 style={{ margin: '0 0 4px 0' }}>
-                  {task.title}
-                  {critical ? <span style={{ marginLeft: '6px', fontSize: '10px', color: '#b91c1c' }}>CRITICAL</span> : null}
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
-                  {task.explanationReasons.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        fontSize: '10px',
-                        backgroundColor: '#eee',
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        color: tag.includes('🚨') || tag.includes('⚠️') ? '#d00' : '#444',
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <p style={{ fontSize: '11px', color: '#4b5563', marginBottom: '6px' }}>
-                  Why here: {getWhyRankedHere(task)}
-                </p>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#007BFF' }}>
-                  {task.finalPriorityScore.toFixed(1)}
-                </div>
-                <div style={{ fontSize: '9px', color: '#999', textTransform: 'uppercase' }}>Priority</div>
-                <div style={{
-                  marginTop: '6px',
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  color: confidence.label === 'High' ? '#065f46' : confidence.label === 'Medium' ? '#92400e' : '#991b1b'
-                }}>
-                  Confidence: {confidence.label}
-                </div>
-                {confidence.defaultsUsed.length > 0 ? (
-                  <div style={{ fontSize: '9px', color: '#6b7280', maxWidth: '120px' }}>
-                    Defaults used: {confidence.defaultsUsed.join(', ')}
-                  </div>
-                ) : null}
+          <div key={task.id} className="retro-window">
+            <div className={`retro-titlebar ${critical ? 'critical' : ''}`}>
+              <span>#{index + 1} {task.title.substring(0,20)}{task.title.length > 20 ? '...' : ''}</span>
+              <div className="title-btns">
+                <button className="title-btn" onClick={() => handleEdit(task)}>E</button>
+                <button className="title-btn" onClick={() => handleDelete(task.id)}>X</button>
               </div>
             </div>
+            
+            <div style={{ padding: '8px', backgroundColor: critical ? '#fff5f5' : 'var(--surface)' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ fontFamily: 'var(--font-vt323)', fontSize: '16px' }}>
+                  <strong>Due:</strong> {new Date(task.dueAt).toLocaleString()}
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--accent-primary)', fontFamily: 'var(--font-vt323)' }}>
+                    {task.finalPriorityScore.toFixed(1)}
+                  </div>
+                  <div style={{ fontSize: '10px', textTransform: 'uppercase' }}>Score</div>
+                </div>
+              </div>
 
-            <p style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#666' }}>
-              Due: {new Date(task.dueAt).toLocaleString()}
-            </p>
+              <div className="retro-inset" style={{ marginBottom: '8px', fontSize: '12px' }}>
+                <strong>Why here?</strong> {task.explanationReasons.slice(0, 2).join(' + ') || 'Balanced by urgency and effort'}
+              </div>
 
-            {missingDataHints.length > 0 ? (
-              <div style={{ marginBottom: '10px', fontSize: '10px', color: '#6b7280', backgroundColor: '#f9fafb', borderRadius: '6px', padding: '6px' }}>
-                {missingDataHints.map((hint) => (
-                  <p key={hint} style={{ marginTop: '2px' }}>Hint: {hint}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+                {task.explanationReasons.map((tag) => (
+                  <span key={tag} className="tag">{tag}</span>
                 ))}
               </div>
-            ) : null}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => handleEdit(task)} style={{ fontSize: '11px' }}>Edit</button>
-                <button onClick={() => handleDelete(task.id)} style={{ fontSize: '11px', color: 'red' }} disabled={isSaving}>Delete</button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', fontFamily: 'var(--font-vt323)' }}>
+                  <input
+                    type="checkbox"
+                    checked={task.status === 'completed'}
+                    onChange={() => handleToggleComplete(task)}
+                    style={{ width: '16px', height: '16px' }}
+                  /> DONE
+                </label>
               </div>
-              <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <input
-                  type="checkbox"
-                  checked={task.status === 'completed'}
-                  onChange={() => handleToggleComplete(task)}
-                /> Done
-              </label>
             </div>
           </div>
         );})}
