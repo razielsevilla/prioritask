@@ -29,10 +29,10 @@ function App() {
           
           <h1>
             Defeat Decision Fatigue.<br />
-            <span style={{ color: 'var(--text-primary)', textShadow: '3px 3px 0px var(--accent-secondary)' }}>Master Your Deadlines.</span>
+            <span style={{ color: 'var(--text-primary)', textShadow: '3px 3px 0px var(--accent-secondary)' }}>Just Do It [NOW].</span>
           </h1>
           <p className="retro-inset">
-            PrioriTask is the intelligent Chrome extension that automatically ranks your school assignments based on urgency, difficulty, and grade impact. Focus on what matters, exactly when it matters. ✨
+            PrioriTask is the intelligent Chrome extension that automatically organizes your assignments into actionable <strong>Now, Next, and Later</strong> buckets based on their time pressure. Focus on what matters, exactly when it matters. ✨
           </p>
           <div className="hero-actions">
             <a href="https://github.com/razielsevilla/prioritask/releases/latest" target="_blank" rel="noopener noreferrer" className="btn btn-primary blink">
@@ -68,43 +68,43 @@ function App() {
         <section id="features" className="features container">
           <div className="features-header">
             <h2>Why PrioriTask?</h2>
-            <p className="retro-inset" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'white' }}>Designed for students handling overlapping deadlines.</p>
+            <p className="retro-inset" style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'white' }}>Designed to eliminate the paradox of choice.</p>
           </div>
           
           <div className="features-grid">
             <div className="retro-window feature-card">
               <div className="retro-titlebar">
-                <span>smart_sort.exe</span>
+                <span>time_buckets.exe</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
               </div>
               <div className="feature-content">
                 <div className="feature-icon float-1">⏱️</div>
-                <h3 className="retro-inset">Smart Prioritization</h3>
-                <p className="retro-inset">Choose from multiple ranking algorithms including Deadline Urgency (DDS), Difficulty+Urgency (DoD), and Grade Impact Efficiency (EoC).</p>
+                <h3 className="retro-inset">Now, Next, Later</h3>
+                <p className="retro-inset">Stop looking at a wall of assignments. Tasks are automatically sorted into intuitive time-buckets so you only focus on what is due [NOW].</p>
               </div>
             </div>
             
             <div className="retro-window feature-card">
               <div className="retro-titlebar">
-                <span>risk_alert.vbx</span>
+                <span>tshirt_sizing.vbx</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
               </div>
               <div className="feature-content">
-                <div className="feature-icon float-2">⚠️</div>
-                <h3 className="retro-inset">Risk Alerts</h3>
-                <p className="retro-inset">The FSR (Feasibility Status Report) overlay flags potentially unrealistic schedules before you fall behind your goals.</p>
+                <div className="feature-icon float-2">👕</div>
+                <h3 className="retro-inset">T-Shirt Sizing</h3>
+                <p className="retro-inset">Ditch complex math inputs. Just estimate effort as Small, Medium, or Large, and the app calculates the Time Pressure score for you.</p>
               </div>
             </div>
             
             <div className="retro-window feature-card">
               <div className="retro-titlebar">
-                <span>logic_core.dll</span>
+                <span>risk_alert.dll</span>
                 <div className="title-btns"><button className="title-btn">X</button></div>
               </div>
               <div className="feature-content">
-                <div className="feature-icon float-3">🧠</div>
-                <h3 className="retro-inset">Explainable Logic</h3>
-                <p className="retro-inset">Stop guessing what to do next. PrioriTask explains exactly why an assignment is ranked at the top of your list.</p>
+                <div className="feature-icon float-3">⚠️</div>
+                <h3 className="retro-inset">Workload Safety Net</h3>
+                <p className="retro-inset">The FSR (Feasibility Status Report) engine works in the background to silently flag critical workloads and boost them to your [NOW] bucket before you run out of time.</p>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@ function App() {
         <section className="algo-section container">
           <div className="retro-window">
             <div className="retro-titlebar">
-              <span>algo.exe</span>
+              <span>pipeline.exe</span>
               <div className="title-btns">
                 <button className="title-btn">_</button>
                 <button className="title-btn">□</button>
@@ -126,17 +126,20 @@ function App() {
                 Copyright (C) 2026 Candypop Inc.<br/>
                 Initializing core algorithms... OK
               </div>
-              <div><span className="terminal-prompt">C:\&gt;</span> cat dds_algo.sys</div>
-              <div>Calculating Due Date Score (DDS):</div>
-              <div>[+] Score = 100 / (Days Left + 1)</div>
+              <div><span className="terminal-prompt">C:\&gt;</span> cat now_bucket.sys</div>
+              <div>Calculating TOP PRIORITY tasks:</div>
+              <div>[+] Condition: Due within 48 hours OR High Risk (FSR &gt; 75%)</div>
+              <div>[+] Action: Drops everything else. DO THIS FIRST.</div>
               <br/>
-              <div><span className="terminal-prompt">C:\&gt;</span> cat dod_algo.sys</div>
-              <div>Calculating Difficulty over Days (DoD):</div>
-              <div>[+] Score = (Difficulty * 10) / (Days Left + 0.5)</div>
+              <div><span className="terminal-prompt">C:\&gt;</span> cat next_bucket.sys</div>
+              <div>Calculating UP NEXT tasks:</div>
+              <div>[+] Condition: Due within 7 days.</div>
+              <div>[+] Action: Keep on your radar. Sorted by Pressure Score.</div>
               <br/>
-              <div><span className="terminal-prompt">C:\&gt;</span> cat eoc_algo.sys</div>
-              <div>Calculating Effort-Weighted Impact (EoC):</div>
-              <div>[+] Score = (Weight * 100) / (Hours * (Days Left + 0.5))</div>
+              <div><span className="terminal-prompt">C:\&gt;</span> cat later_bucket.sys</div>
+              <div>Calculating BACKLOG tasks:</div>
+              <div>[+] Condition: Due &gt; 7 days &amp; Healthy FSR.</div>
+              <div>[+] Action: Relax. You have plenty of time.</div>
               <br/>
               <div className="blink"><span className="terminal-prompt">C:\&gt;</span> _</div>
             </div>
