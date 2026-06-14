@@ -3,11 +3,21 @@
   "name": "PrioriTask",
   "version": "1.0.1",
   "description": "Prioritize assignments and manage decision fatigue.",
-  "permissions": ["storage", "alarms", "notifications"],
+  "permissions": ["storage", "alarms", "notifications", "contextMenus", "scripting"],
+  "host_permissions": [
+    "https://pinnacle.pnc.edu.ph/*"
+  ],
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": ["https://pinnacle.pnc.edu.ph/*"],
+      "js": ["src/content/scraper.ts"],
+      "run_at": "document_end"
+    }
+  ],
   "action": {
     "default_popup": "popup.html"
   },

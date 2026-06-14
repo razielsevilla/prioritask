@@ -418,6 +418,90 @@ const initializeScheduler = async (): Promise<void> => {
 
 chrome.runtime.onInstalled.addListener(() => {
   void initializeScheduler();
+  chrome.contextMenus.create({
+    id: 'add-to-prioritask',
+    title: 'Add to PrioriTask',
+    contexts: ['selection']
+  });
+});
+
+const handleHighlightAndAdd = async (text: string) => {
+  const DATE_REGEX = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})|([A-Za-z]{3}\s\d{1,2},?\s\d{4})|(\d{4}-\d{2}-\d{2})|((next\s)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday))/i;
+  const match = text.match(DATE_REGEX);
+  
+  let dueAt = new Date();
+  dueAt.setDate(dueAt.getDate() + 1); // default to tomorrow
+  
+  if (match) {
+    const parsedDate = new Date(match[0]);
+    if (!isNaN(parsedDate.getTime())) {
+      dueAt = parsedDate;
+    }
+  }
+
+  // Create a clean title by removing the date text
+  let title = text;
+  if (match) {
+    title = title.replace(match[0], '').trim();
+  }
+  if (title.length > 50) {
+    title = title.substring(0, 50) + '...';
+  }
+  
+  const newTask: Assignment = {
+    id: crypto.randomUUID(),
+    title: title || 'Highlighted Task',
+    dueAt: dueAt.toISOString(),
+    status: 'pending',
+    tShirtSize: 'M',
+    course: 'Web Snippet',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  await repository.saveAssignment(newTask);
+  
+  // Optionally show a notification that it was added
+  await sendNotification(newTask, '✨ Task Added', `"${newTask.title}" was saved to PrioriTask.`);
+};
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === 'add-to-prioritask' && info.selectionText) {
+    void handleHighlightAndAdd(info.selectionText);
+  }
+});
+
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request.action === 'SYNC_LMS_TASKS' && request.payload) {
+    void (async () => {
+      let addedCount = 0;
+      for (const taskData of request.payload) {
+        const newTask: Assignment = {
+          id: crypto.randomUUID(),
+          title: taskData.title,
+          dueAt: taskData.dueAt,
+          status: 'pending',
+          tShirtSize: taskData.tShirtSize || 'M',
+          course: taskData.course || 'LMS Import',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await repository.saveAssignment(newTask);
+        addedCount++;
+      }
+      
+      if (addedCount > 0) {
+        void sendNotification(
+          { id: 'system', title: 'System', dueAt: new Date().toISOString(), status: 'pending', tShirtSize: 'M', course: null, createdAt: '', updatedAt: '' },
+          '🔄 LMS Sync Complete',
+          `Successfully imported ${addedCount} assignments.`
+        );
+      }
+      
+      sendResponse({ success: true, count: addedCount });
+    })();
+    return true; // Keep the message channel open for async response
+  }
 });
 
 chrome.runtime.onStartup.addListener(() => {

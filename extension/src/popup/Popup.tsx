@@ -321,6 +321,40 @@ export default function Popup() {
         </button>
       </div>
       
+      {/* SYNC BUTTON */}
+      <div style={{ display: 'flex', gap: '8px', margin: '8px 0' }}>
+        <button 
+          className="retro-btn" 
+          style={{ flex: 1, backgroundColor: '#E0FFFF', color: 'black', border: '2px solid black' }}
+          onClick={() => {
+            setIsSaving(true);
+            setStatusMessage('Scanning active tab for tasks...');
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+              if (tabs[0]?.id) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'SCRAPE_LMS' }, (response) => {
+                  if (chrome.runtime.lastError) {
+                    setIsSaving(false);
+                    setStatusMessage('LMS Scraper not found. Are you on pinnacle.pnc.edu.ph?');
+                  } else if (response?.success) {
+                    setStatusMessage('Sync successful!');
+                    setTimeout(() => {
+                      void loadAssignments();
+                      setIsSaving(false);
+                    }, 1000); // Give the background script time to save tasks
+                  }
+                });
+              } else {
+                setIsSaving(false);
+                setStatusMessage('No active tab found.');
+              }
+            });
+          }}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Syncing...' : '🔄 Sync from Active Tab (Pinnacle)'}
+        </button>
+      </div>
+      
       {activeTab === 'add' && (
         <div className="retro-window">
           <div className="retro-titlebar">
