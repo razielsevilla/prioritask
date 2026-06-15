@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# 🌸 PrioriTask Web Landing Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the code for the **PrioriTask** landing and marketing portal.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎨 Design & Aesthetic
 
-## React Compiler
+The landing page is designed around a premium **Candypop Y2K** retro-operating system aesthetic, featuring:
+- High contrast pink, cyan, and yellow neon color palette.
+- Vintage-style Windows title bars, dialog window insets, and marquee tickers.
+- An interactive command-line style terminal explaining the priority bucket logic.
+- Responsive features and onboarding steps for installation.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Framework**: React 18, TypeScript, Vite
+- **Styles**: Custom Vanilla CSS (`src/App.css` and `src/index.css`)
+- **Icons**: Emoji and custom glyphs
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 💻 Development Commands
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+From this directory, run:
+
+```bash
+# Install dependencies
+npm install
+
+# Run the local development server (Vite HMR)
+npm run dev
+
+# Run ESLint check
+npm run lint
+
+# Build production bundle (/dist)
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📂 Key Entry Points
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+*   **HTML Template**: [index.html](file:///c:/Users/Raziel/OneDrive/Documents/06_Projects/PrioriTask/web/index.html)
+*   **App Component**: [src/App.tsx](file:///c:/Users/Raziel/OneDrive/Documents/06_Projects/PrioriTask/web/src/App.tsx) (Contains structural layout and content sections)
+*   **Core Theme & Reset**: [src/index.css](file:///c:/Users/Raziel/OneDrive/Documents/06_Projects/PrioriTask/web/src/index.css)
+*   **App Styling**: [src/App.css](file:///c:/Users/Raziel/OneDrive/Documents/06_Projects/PrioriTask/web/src/App.css)
